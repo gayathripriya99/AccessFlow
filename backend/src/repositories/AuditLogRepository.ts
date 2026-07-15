@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 import { AuditAction, AuditLog } from '../models/AuditLog';
 
 export interface RecordAuditEventInput {
-  userId?: Types.ObjectId | null;
+  userId?: Types.ObjectId | string | null;
   action: AuditAction;
   ip?: string | null;
   userAgent?: string | null;

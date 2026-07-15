@@ -18,6 +18,11 @@ const BCRYPT_SALT_ROUNDS = 12;
 export interface RequestContext {
   ip?: string | null;
   userAgent?: string | null;
+  // Id of the authenticated caller performing the action — unset for
+  // pre-authentication flows (register/login), set for authenticated
+  // management actions (Permission/Role/User CRUD) so audit logs record who
+  // performed the change, not just who it affected.
+  actorId?: string | null;
 }
 
 export interface RegisterInput {

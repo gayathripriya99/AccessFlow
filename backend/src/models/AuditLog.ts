@@ -6,7 +6,15 @@ export type AuditAction =
   | 'auth.login.failure'
   | 'auth.refresh'
   | 'auth.refresh.reuse_detected'
-  | 'auth.logout';
+  | 'auth.logout'
+  | 'permission.create'
+  | 'permission.update'
+  | 'permission.delete'
+  | 'role.create'
+  | 'role.update'
+  | 'role.delete'
+  | 'user.update'
+  | 'user.delete';
 
 export interface AuditLogDocument extends Document {
   _id: Types.ObjectId;

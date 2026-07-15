@@ -1,0 +1,28 @@
+import { Router } from 'express';
+import { PermissionController } from '../../controllers/PermissionController';
+import { PermissionService } from '../../services/PermissionService';
+import { PermissionRepository } from '../../repositories/PermissionRepository';
+import { AuditLogRepository } from '../../repositories/AuditLogRepository';
+import { validateRequest } from '../../middlewares/validateRequest';
+import { validateObjectIdParam } from '../../middlewares/validateObjectIdParam';
+import { requireAuth } from '../../middlewares/requireAuth';
+import { createPermissionSchema, updatePermissionSchema } from '../../validators/permission.validators';
+import { listQuerySchema } from '../../validators/pagination.validators';
+
+const permissionService = new PermissionService(new PermissionRepository(), new AuditLogRepository());
+const permissionController = new PermissionController(permissionService);
+
+export const permissionRouter = Router();
+
+permissionRouter.use(requireAuth);
+
+permissionRouter.post('/', validateRequest(createPermissionSchema), permissionController.create);
+permissionRouter.get('/', validateRequest(listQuerySchema), permissionController.list);
+permissionRouter.get('/:id', validateObjectIdParam(), permissionController.getById);
+permissionRouter.patch(
+  '/:id',
+  validateObjectIdParam(),
+  validateRequest(updatePermissionSchema),
+  permissionController.update,
+);
+permissionRouter.delete('/:id', validateObjectIdParam(), permissionController.delete);

@@ -1,4 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { toJSONOptions } from './schemaOptions';
 
 export interface UserDocument extends Document {
   _id: Types.ObjectId;
@@ -6,8 +7,8 @@ export interface UserDocument extends Document {
   passwordHash: string;
   name: string;
   isActive: boolean;
-  // Roles/permissions resolution arrives in Phase 2/3 — this field is
-  // reserved now so the schema doesn't need a breaking migration later.
+  // Wired up for real in Phase 2 (Role model + assignment endpoints).
+  // Permission *evaluation* off of these roles is still Phase 3.
   roles: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -42,7 +43,7 @@ const userSchema = new Schema<UserDocument>(
       default: [],
     },
   },
-  { timestamps: true },
+  { timestamps: true, toJSON: toJSONOptions },
 );
 
 export const User = model<UserDocument>('User', userSchema);
