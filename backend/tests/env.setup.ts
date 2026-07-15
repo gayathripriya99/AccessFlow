@@ -1,0 +1,11 @@
+process.env.NODE_ENV = 'test';
+process.env.MONGO_URI = 'mongodb://placeholder-replaced-in-setup/accessflow-test';
+process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+process.env.JWT_ACCESS_EXPIRES_IN = '15m';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+process.env.JWT_REFRESH_EXPIRES_IN = '7d';
+process.env.REFRESH_COOKIE_NAME = 'accessflow_refresh_token';
+process.env.CORS_ORIGINS = 'http://localhost:3000';
+process.env.AUTH_RATE_LIMIT_WINDOW_MS = '900000';
+process.env.AUTH_RATE_LIMIT_MAX = '1000';
+process.env.LOG_LEVEL = 'silent';
