@@ -232,6 +232,11 @@ Ran the new test suite (`npm test`) after the first complete pass of implementat
 5. Commit and push using the **already-configured** remote (`origin` → `git@github-accessflow:gayathripriyacvg-afk/RBAC_project.git`, repo-local git identity already set from Phase 1) — plain `git add` / `commit` / `push origin main`, no SSH/account setup needed again. This was the user's explicit instruction: "after that again what you did push to git, same procedure" (meaning: same *destination/remote*, not repeat the key-generation dance).
 6. Update *this* archive file again once Phase 2 is actually complete and pushed, mirroring how section 8 documents Phase 1's push.
 
-### Current git state (unchanged since section 8 — nothing from Phase 2 has been committed yet)
+### Current git state — pushed as a WIP checkpoint, 2026-07-16
 
-Working tree has all the Phase 2 files above as **uncommitted** changes on top of commit `20491d4` (the last pushed commit, which only contains the Phase 1 archive-update). Do not assume Phase 2 is on GitHub — it is only on local disk right now, and only partially verified (build clean, tests not yet green).
+Per explicit user request ("push whatever did so far... pause and will continue when i say continue from this chat"), the Phase 2 work-in-progress above was committed and pushed **as-is, before verification finished**. This is deliberately a checkpoint commit, not a "Phase 2 complete" commit:
+
+- Commit `92df2e6` ("WIP: Phase 2 Users/Roles/Permissions CRUD (build clean, tests not yet green)") on `main`, pushed to `origin` (same remote/SSH setup as Phase 1 — no key/account work needed, just `git add -A && git commit && git push origin main`).
+- 32 files changed (all the new Permission/Role/User-CRUD layers plus the `schemaOptions.ts` fix and the modified files listed earlier in this section, plus this archive doc itself).
+- **State at time of push:** `npm run build` clean; `npm run lint` clean (as of the pre-fix pass — not re-checked after the toJSON fix, though it only touched schema options so a lint issue is unlikely); `npm test` **not re-run since the toJSON fix** — last known test run (before the fix) had 7/27 failing, root-caused and described in detail above. The malformed 23-char ObjectId test literal is also **still unfixed** in the pushed code.
+- **On resume:** pick up at "Immediate next steps" above, starting with step 1 (fix the malformed ObjectId literal), then re-run build/lint/test, then the live smoke test, then docs (`backend/README.md`, `backend/Phase-02.md`, root `README.md`, `CLAUDE.md`), then a final "Phase 2 complete" commit+push (same remote, no setup needed) that supersedes this WIP checkpoint.
