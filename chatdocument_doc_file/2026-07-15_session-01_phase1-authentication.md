@@ -165,3 +165,26 @@ No local `mongod` binary is available in this environment — `npm run dev` agai
 - Per the guide's own AI-instructions section: any of the above that touches the user's accounts/local machine/credentials requires explicit confirmation before acting, and secrets/keys must never be requested or stored by the assistant.
 
 **Fastest way to resume:** tell the next session to read this file, then `backend/Phase-01.md` and `backend/README.md` for the as-built specifics, then proceed with whichever phase (2, or the GitHub/deployment work) is next.
+
+---
+
+## 8. GitHub push — completed 2026-07-16
+
+The user chose to push the Phase 1 work to GitHub before continuing further requirement-doc phases ("firstly push whatever done so far ... then i will say continue the requirement doc"). Followed `doc_files/12_GITHUB_DEPLOYMENT_MASTER_GUIDE.md`:
+
+- **Discovered existing state first** (read-only checks, no changes yet): global git config already set to a *different* email (`gayathripriyacvg@gmail.com` — note: missing the `v`, i.e. NOT the same as the project's intended `gayathripriyacvg@gmail.com`... actually the global email found was `gayathripriyacg@gmail.com`, one character different from the correct `gayathripriyacvg@gmail.com`). Per the guide's explicit instruction ("If another GitHub account already exists on this computer, DO NOT overwrite the existing configuration"), global config was left untouched throughout.
+- An existing SSH key (`~/.ssh/id_ed25519_gayathri`) and an unused `~/.ssh/config.txt` were found on the machine, but the user did not want those inspected/reused — declined a tool call that would have read them. Proceeded instead by asking the user directly whether to reuse or regenerate; user chose **generate a new dedicated key**.
+- **Repo-local git identity set** (not global): `user.name = "gayathri priya C V"`, `user.email = "gayathripriyacvg@gmail.com"`, scoped to this repo only via `git config --local`.
+- Local branch renamed `master` → `main` (the guide calls for pushing "the main branch").
+- **Generated a dedicated ed25519 SSH keypair** for this project at `~/.ssh/id_ed25519_accessflow` (no passphrase — required for this non-interactive environment; user can add one later via `ssh-keygen -p`). First attempt's public key was added to GitHub by the user but the account rejected it on `ssh -T` test; user said "create new one" so the key was regenerated at the same path (old one deleted first) — the **final, working fingerprint is `SHA256:RbEVAk5KavKUeVRWr+vM78JBMnTovq5gNeaHp++cPzY`**.
+- Added a dedicated `Host github-accessflow` block to `~/.ssh/config` (new file — none existed before; `config.txt` was left alone, untouched) pointing at the new key with `IdentitiesOnly yes`.
+- User created the actual GitHub repo manually (not via `gh` CLI, which isn't installed) at **`https://github.com/gayathripriyacvg-afk/RBAC_project`** — note the final repo owner/name (`gayathripriyacvg-afk/RBAC_project`) differs from the guide's *recommended* name (`AccessFlow-IAM`); this was the user's actual choice and is now the real remote of record.
+- User added the new public key to that GitHub account via Settings → SSH and GPG keys → New SSH key, titled "AccessFlow deploy key". Confirmed via screenshot.
+- Verified `ssh -T git@github-accessflow` → `Hi gayathripriyacvg-afk! You've successfully authenticated...` — auth confirmed working.
+- Staged and committed **everything** currently in the working tree (first commit, root commit `8b4c9b3`, message "Phase 1: Authentication backend (AccessFlow)") — confirmed via `git status` before staging that `.env`, `node_modules/`, `dist/` were correctly excluded by `.gitignore`.
+- Added remote `origin` pointing to `git@github-accessflow:gayathripriyacvg-afk/RBAC_project.git` (using the dedicated host alias, **not** the bare `github.com` URL GitHub's own "Quick setup" page suggested — that generic URL would've used default/first-matching SSH identity instead of the dedicated one).
+- `git push -u origin main` — succeeded, `main` now tracks `origin/main`.
+
+**Current remote state:** GitHub repo `gayathripriyacvg-afk/RBAC_project` has one commit (`8b4c9b3`) containing all of Phase 1 (backend/, doc_files/, root README/CLAUDE.md, this chat archive folder). Working tree is clean, nothing uncommitted.
+
+**No CI/CD, no Vercel/Render/Atlas deployment configured yet** — those remain from the still-open "Also pending" list in section 7. Per the user's stated plan, they will say "continue the requirement doc" when ready to proceed with the next requirement-doc phase (most likely Phase 2 — Roles/Permissions CRUD — rather than deployment, but confirm before assuming).
