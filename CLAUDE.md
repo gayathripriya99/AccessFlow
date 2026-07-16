@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **AccessFlow** — a portfolio-quality, production-grade Enterprise IAM/RBAC platform. Master spec: [doc_file/00_AI_MASTER_INSTRUCTIONS_PRO.md](doc_file/00_AI_MASTER_INSTRUCTIONS_PRO.md). That file lists a planned 14-document suite (`01_PRODUCT_REQUIREMENTS.md` through `14_INTERVIEW_PREPARATION.md`) — as of now **only doc `00` exists**; the rest haven't been authored yet, so don't assume specs beyond what `00` states and what's already built. (The original, more detailed `doc_files/` folder — including the GitHub/deployment conventions doc — was replaced by this condensed version outside of any Claude session; its content is no longer in the repo, only summarized in `chatdocument_doc_file/`.)
 
-Progress is tracked per-phase in `backend/Phase-XX.md` files and in the root [README.md](README.md) phase table. **Phases 1 (Authentication) and 2 (Users/Roles/Permissions CRUD) are complete.** Read the most recent `Phase-XX.md` before starting new work to know exactly what exists. The repo is pushed to `github.com/gayathripriya99/AccessFlow` (`main` branch) via a dedicated repo-local git identity/SSH key — see `chatdocument_doc_file/` for the exact setup history if that ever needs revisiting.
+Progress is tracked per-phase in `backend/Phase-XX.md` files and in the root [README.md](README.md) phase table. **Phases 1 (Authentication), 2 (Users/Roles/Permissions CRUD), and 3 (Authorization Middleware) are complete.** Read the most recent `Phase-XX.md` before starting new work to know exactly what exists. The repo is pushed to `github.com/gayathripriya99/AccessFlow` (`main` branch) via a dedicated repo-local git identity/SSH key — see `chatdocument_doc_file/` for the exact setup history if that ever needs revisiting.
 
 ## Commands (run from `backend/`)
 
@@ -39,18 +39,19 @@ routes → controllers → services → repositories → MongoDB (Mongoose model
 - `src/repositories/*` — the only layer allowed to touch Mongoose models directly.
 - `src/models/*` — Mongoose schemas.
 - `src/config/*` — env loader (`env.ts`, throws on missing required vars at import time), DB connection, pino logger.
-- `src/middlewares/*` — `errorHandler`/`notFoundHandler` (centralized JSON error shape via `ApiError`), `validateRequest` (Zod), `rateLimiter`, `validateObjectIdParam` (rejects malformed `:id` params with 400 before hitting the service), `requireAuth` (verifies bearer JWT, populates `req.auth` — this is authentication only, **not** authorization/permission-checking, which is still Phase 3 and not yet built).
+- `src/middlewares/*` — `errorHandler`/`notFoundHandler` (centralized JSON error shape via `ApiError`), `validateRequest` (Zod), `rateLimiter`, `validateObjectIdParam` (rejects malformed `:id` params with 400 before hitting the service), `requireAuth` (verifies bearer JWT, populates `req.auth` — authentication only, proves identity), `requirePermission(name)` (Phase 3 — resolves the caller's effective permissions and 403s if missing; always runs after `requireAuth`).
 - `src/utils/*` — `ApiError`, `asyncHandler`, JWT sign/verify (`jwt.ts`), refresh-token hashing (`hashToken.ts`, SHA-256 — deliberately not bcrypt since refresh tokens are already high-entropy), cookie helpers, `pagination.ts` (shared `parsePagination`/`buildPaginationMeta` used by every list endpoint), `objectId.ts` (`isValidObjectId`, `toObjectIdArray`).
+- `src/constants/systemPermissions.ts` — the 11 baseline permissions + `admin` role name used by first-user bootstrap (see below).
 
 New feature work should follow this exact layering — don't put logic in controllers or routes.
 
-## RBAC rules (Permission/Role models exist now — Phase 2; enforcement is still Phase 3)
+## RBAC rules (enforced since Phase 3)
 
 - Permissions are the source of truth. Users may have multiple roles (`User.roles: ObjectId[]`, `src/models/User.ts`); roles bundle permissions (`Role.permissions: ObjectId[]`, `src/models/Role.ts`).
-- **Never** check `role === "Admin"` directly anywhere in authorization logic — always resolve and evaluate the permission set.
-- `/api/v1/permissions`, `/api/v1/roles`, `/api/v1/users` (Phase 2, `src/routes/v1/{permission,role,user}.routes.ts`) provide full CRUD over this data model, but are currently guarded by `requireAuth` **only** — any authenticated user can manage any resource. This is intentional and documented (see `backend/Phase-02.md`), not a bug to silently patch; Phase 3 is what adds real permission checks on top.
-- Deleting a `Permission`/`Role` cascades: it's pulled out of every `Role`/`User` that referenced it (see `PermissionRepository.deleteById`/`RoleRepository.deleteById`). Deleting a `User` revokes all their refresh tokens.
-- There is no seed data — no default "Admin" role or bootstrap permission set exists. Every environment starts with zero permissions/roles.
+- **Never** check `role === "Admin"` directly anywhere in authorization logic — always resolve and evaluate the permission set. `AuthorizationService.getPermissionNames(userId)` is the one place this resolution happens (populates `roles` → `roles.permissions`, flattens to a name set); `requirePermission(name)` is the only middleware that should call it.
+- `/api/v1/permissions`, `/api/v1/roles`, `/api/v1/users` (`src/routes/v1/{permission,role,user}.routes.ts`) are now genuinely permission-gated, one `requirePermission('<resource>.<action>')` per route — see `backend/Phase-03.md` for the full permission-to-route mapping.
+- **Admin bootstrap:** the very first user ever registered (`UserRepository.count() === 1` at that moment) automatically gets an `admin` role with all 11 baseline permissions, via `AdminBootstrapService.bootstrapFirstUserAsAdmin`, called from `AuthService.register`. Every later registration gets zero roles — access must be granted explicitly via `PATCH /users/:id`. This also means the first `createAuthenticatedUser()` call in any test file becomes that test's admin (each test's in-memory DB is cleared beforehand); tests needing a guaranteed non-admin user should use `createNonAdminUser` from `tests/helpers/authenticatedUser.ts` instead.
+- Deleting a `Permission`/`Role` cascades: it's pulled out of every `Role`/`User` that referenced it (see `PermissionRepository.deleteById`/`RoleRepository.deleteById`). Deleting a `User` revokes all their refresh tokens. Deactivating (`isActive: false`) or deleting a user also immediately zeroes out their effective permissions on their next request, even on an unexpired access token — `AuthorizationService` checks `isActive`, not just JWT validity.
 
 ## Auth/session design notes (non-obvious, worth knowing before touching this code)
 

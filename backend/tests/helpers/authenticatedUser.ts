@@ -23,3 +23,15 @@ export async function createAuthenticatedUser(app: Express): Promise<Authenticat
 
   return { accessToken: login.body.data.accessToken, userId: register.body.data.id };
 }
+
+/**
+ * The very first user registered against a given database becomes admin
+ * (see AdminBootstrapService). Tests that need a guaranteed non-admin user
+ * — e.g. to assert 403 on a missing permission — should use this instead of
+ * createAuthenticatedUser, which registers a throwaway first user to
+ * consume the admin slot before creating and returning the real one.
+ */
+export async function createNonAdminUser(app: Express): Promise<AuthenticatedUser> {
+  await createAuthenticatedUser(app);
+  return createAuthenticatedUser(app);
+}

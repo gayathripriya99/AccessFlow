@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import { createAuthenticatedUser } from './helpers/authenticatedUser';
+import { createAuthenticatedUser, createNonAdminUser } from './helpers/authenticatedUser';
 
 const app = createApp();
 
@@ -21,15 +21,15 @@ describe('Permissions API', () => {
     const created = await request(app)
       .post('/api/v1/permissions')
       .set('Authorization', auth)
-      .send({ name: 'users.read', description: 'Read user records' });
+      .send({ name: 'inventory.read', description: 'Read inventory records' });
 
     expect(created.status).toBe(201);
-    expect(created.body.data).toMatchObject({ name: 'users.read', description: 'Read user records' });
+    expect(created.body.data).toMatchObject({ name: 'inventory.read', description: 'Read inventory records' });
 
     const duplicate = await request(app)
       .post('/api/v1/permissions')
       .set('Authorization', auth)
-      .send({ name: 'users.read', description: 'Different description' });
+      .send({ name: 'inventory.read', description: 'Different description' });
 
     expect(duplicate.status).toBe(409);
   });
@@ -49,17 +49,17 @@ describe('Permissions API', () => {
     await request(app)
       .post('/api/v1/permissions')
       .set('Authorization', auth)
-      .send({ name: 'roles.read', description: 'Read roles' });
+      .send({ name: 'catalog.read', description: 'Read catalog' });
     await request(app)
       .post('/api/v1/permissions')
       .set('Authorization', auth)
-      .send({ name: 'roles.write', description: 'Write roles' });
+      .send({ name: 'catalog.write', description: 'Write catalog' });
 
-    const res = await request(app).get('/api/v1/permissions?search=roles.w').set('Authorization', auth);
+    const res = await request(app).get('/api/v1/permissions?search=catalog.w').set('Authorization', auth);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
-    expect(res.body.data[0].name).toBe('roles.write');
+    expect(res.body.data[0].name).toBe('catalog.write');
     expect(res.body.meta).toMatchObject({ page: 1, limit: 20, total: 1 });
   });
 
@@ -105,5 +105,19 @@ describe('Permissions API', () => {
 
     const malformed = await request(app).get('/api/v1/permissions/not-an-id').set('Authorization', auth);
     expect(malformed.status).toBe(400);
+  });
+
+  it('rejects a non-admin authenticated user with 403', async () => {
+    const { accessToken } = await createNonAdminUser(app);
+    const auth = `Bearer ${accessToken}`;
+
+    const list = await request(app).get('/api/v1/permissions').set('Authorization', auth);
+    expect(list.status).toBe(403);
+
+    const create = await request(app)
+      .post('/api/v1/permissions')
+      .set('Authorization', auth)
+      .send({ name: 'inventory.write', description: 'Write inventory' });
+    expect(create.status).toBe(403);
   });
 });

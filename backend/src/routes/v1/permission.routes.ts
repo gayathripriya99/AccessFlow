@@ -6,6 +6,7 @@ import { AuditLogRepository } from '../../repositories/AuditLogRepository';
 import { validateRequest } from '../../middlewares/validateRequest';
 import { validateObjectIdParam } from '../../middlewares/validateObjectIdParam';
 import { requireAuth } from '../../middlewares/requireAuth';
+import { requirePermission } from '../../middlewares/requirePermission';
 import { createPermissionSchema, updatePermissionSchema } from '../../validators/permission.validators';
 import { listQuerySchema } from '../../validators/pagination.validators';
 
@@ -16,13 +17,24 @@ export const permissionRouter = Router();
 
 permissionRouter.use(requireAuth);
 
-permissionRouter.post('/', validateRequest(createPermissionSchema), permissionController.create);
-permissionRouter.get('/', validateRequest(listQuerySchema), permissionController.list);
-permissionRouter.get('/:id', validateObjectIdParam(), permissionController.getById);
+permissionRouter.post(
+  '/',
+  requirePermission('permissions.create'),
+  validateRequest(createPermissionSchema),
+  permissionController.create,
+);
+permissionRouter.get('/', requirePermission('permissions.read'), validateRequest(listQuerySchema), permissionController.list);
+permissionRouter.get('/:id', requirePermission('permissions.read'), validateObjectIdParam(), permissionController.getById);
 permissionRouter.patch(
   '/:id',
+  requirePermission('permissions.update'),
   validateObjectIdParam(),
   validateRequest(updatePermissionSchema),
   permissionController.update,
 );
-permissionRouter.delete('/:id', validateObjectIdParam(), permissionController.delete);
+permissionRouter.delete(
+  '/:id',
+  requirePermission('permissions.delete'),
+  validateObjectIdParam(),
+  permissionController.delete,
+);

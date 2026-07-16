@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { UserRepository } from '../repositories/UserRepository';
 import { RefreshTokenRepository } from '../repositories/RefreshTokenRepository';
 import { AuditLogRepository } from '../repositories/AuditLogRepository';
+import { AdminBootstrapService } from './AdminBootstrapService';
 import { ApiError } from '../utils/ApiError';
 import { hashToken } from '../utils/hashToken';
 import {
@@ -56,6 +57,7 @@ export class AuthService {
     private readonly userRepository: UserRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly auditLogRepository: AuditLogRepository,
+    private readonly adminBootstrapService: AdminBootstrapService,
   ) {}
 
   async register(input: RegisterInput, context: RequestContext): Promise<PublicUser> {
@@ -70,6 +72,8 @@ export class AuthService {
       passwordHash,
       name: input.name,
     });
+
+    await this.adminBootstrapService.bootstrapFirstUserAsAdmin(user);
 
     await this.auditLogRepository.record({
       userId: user._id,

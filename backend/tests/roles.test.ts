@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import { createAuthenticatedUser } from './helpers/authenticatedUser';
+import { createAuthenticatedUser, createNonAdminUser } from './helpers/authenticatedUser';
 
 const app = createApp();
 
@@ -99,5 +99,19 @@ describe('Roles API', () => {
 
     const userAfter = await request(app).get(`/api/v1/users/${userId}`).set('Authorization', auth);
     expect(userAfter.body.data.roles).toEqual([]);
+  });
+
+  it('rejects a non-admin authenticated user with 403', async () => {
+    const { accessToken } = await createNonAdminUser(app);
+    const auth = `Bearer ${accessToken}`;
+
+    const list = await request(app).get('/api/v1/roles').set('Authorization', auth);
+    expect(list.status).toBe(403);
+
+    const create = await request(app)
+      .post('/api/v1/roles')
+      .set('Authorization', auth)
+      .send({ name: 'unauthorized-role', description: 'x' });
+    expect(create.status).toBe(403);
   });
 });

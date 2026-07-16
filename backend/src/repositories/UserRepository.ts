@@ -36,6 +36,16 @@ export class UserRepository {
     return query.exec();
   }
 
+  findByIdWithPermissions(id: string | Types.ObjectId): Promise<UserDocument | null> {
+    return User.findById(id)
+      .populate({ path: 'roles', populate: { path: 'permissions' } })
+      .exec();
+  }
+
+  count(): Promise<number> {
+    return User.countDocuments().exec();
+  }
+
   create(input: CreateUserInput): Promise<UserDocument> {
     return User.create(input);
   }

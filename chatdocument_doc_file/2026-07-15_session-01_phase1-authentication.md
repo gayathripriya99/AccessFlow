@@ -353,3 +353,50 @@ This rename did not require touching the SSH key itself, `~/.ssh/config`, or the
 ### Resuming Phase 3 after this
 
 Nothing about the rename changes the Phase 3 pause point from section 12 — the bootstrap-strategy question is still open and still the first thing to resolve before writing any Phase 3 code.
+
+---
+
+## 14. Phase 3 (Authorization Middleware) — COMPLETE, 2026-07-16
+
+User said "continue" and referenced this archive + the new `doc_file/`. Per section 12's exact resume instructions, re-asked the bootstrap-strategy question first — this time the user picked **"First registered user becomes admin"** (option 1). Planned the full implementation (`EnterPlanMode`), got it approved with no changes, and built it.
+
+### What was built
+
+- `src/constants/systemPermissions.ts` — 11 baseline permissions (`permissions.{create,read,update,delete}`, `roles.{create,read,update,delete}`, `users.{read,update,delete}` — no `users.create`, since that route doesn't exist) + `ADMIN_ROLE_NAME = 'admin'`.
+- `src/services/AdminBootstrapService.ts` — `bootstrapFirstUserAsAdmin(user)`: if `UserRepository.count() === 1`, idempotently find-or-creates all 11 baseline permissions, find-or-creates the `admin` role bundling them, assigns it to the user. Called from `AuthService.register` right after user creation (wired via `auth.routes.ts`'s composition root).
+- `src/services/AuthorizationService.ts` — `getPermissionNames(userId)`: populates `User.roles` → `Role.permissions` (new `UserRepository.findByIdWithPermissions`), flattens to a `Set<string>`. Deactivated/deleted users resolve to an empty set — a real security improvement caught during design: previously a still-valid access JWT for a deactivated/deleted user could hit any endpoint, since `requireAuth` only checks JWT validity, not DB state.
+- `src/middlewares/requirePermission.ts` — factory middleware, 403s if the resolved set lacks the named permission. Applied to every route in `permission.routes.ts`/`role.routes.ts`/`user.routes.ts` (after `requireAuth`, before validation — so an unauthorized caller learns nothing about whether their input was well-formed).
+
+### Real bug/gotcha caught during test-fixture review (before running anything)
+
+Reviewing the plan against the existing Phase 2 test fixtures surfaced a naming collision *before* it caused a failure: `tests/permissions.test.ts` used the literal example permission names `users.read` and `roles.read` as arbitrary test data — both are now real baseline permission names auto-created by bootstrap. Fixed proactively by renaming those two literals to `inventory.read`/`catalog.read` (arbitrary either way, no semantic loss). Everything else across all three Phase 2 test files (`billing.read`, `reports.read`, `audit.read`, role names `support`/`reporter`/`temp-role`/`basic-member`/etc.) was checked and does not collide with the baseline set or the `admin` role name.
+
+### Test-suite changes
+
+- `tests/helpers/authenticatedUser.ts` gained `createNonAdminUser(app)` — registers a throwaway first user (consumes the admin-bootstrap slot) then registers+returns a second, genuinely permission-less user. Works because each test's in-memory DB is cleared before it runs (`tests/setup.ts`'s existing `afterEach`), so "first user in this test" reliably means "first user in this fresh DB."
+- Added one 403-test per resource (permissions/roles/users), each asserting both a read and a mutating action are rejected for a non-admin caller.
+- All 27 pre-existing tests kept passing unmodified in intent (aside from the two renamed literals) — they all rely on their first `createAuthenticatedUser()`/`authHeader()` call becoming admin automatically, which the bootstrap provides for free.
+- **Result: 30/30 tests passing**, `npm run build`/`lint` clean.
+
+### Live smoke test (real HTTP server, in-memory Mongo, real curl — same technique as Phases 1 and 2)
+
+Registered a first user, confirmed they could immediately list the 11 auto-created baseline permissions (`GET /permissions` → `meta.total: 11`, names matched exactly) and create new permissions/roles. Registered a second user, confirmed 403 on `GET /permissions`, `GET /roles`, and `GET /users` — total lockout, as expected for zero roles. Then, as the admin: created a role with **only** `users.read` attached, assigned it to the second user via `PATCH /users/:id`, and confirmed the second user could now `GET /users` (200) while **still** getting 403 on `GET /roles`, `GET /permissions`, and `DELETE /users/:id` (they have read, not delete) — proving the enforcement is genuinely scoped to exactly the granted permission, not an all-or-nothing admin/non-admin switch. Temp smoke script deleted afterward.
+
+### Docs written
+
+- `backend/README.md` — new "Authorization" section explaining the bootstrap + per-route permission requirement; every endpoint table row now has a "Permission" column; Database section notes no new collections, just `AuthorizationService`'s resolution logic; Tests section updated to 30 tests.
+- `backend/Phase-03.md` — new, same format as Phases 1–2.
+- Root `README.md` — Phase 3 row marked Complete.
+- `CLAUDE.md` — RBAC-rules section rewritten from "not yet enforced" to describe the actual enforcement, bootstrap mechanism, and the deactivated-user side effect; architecture section documents `requirePermission` and `src/constants/`.
+
+### Current git state
+
+About to commit everything above as a single "Phase 3 complete" commit and push to `origin` (`git@github-accessflow:gayathripriya99/AccessFlow.git`, updated in section 13) — same procedure as every prior checkpoint.
+
+### Where things stand / next steps
+
+**Done:** Phases 1 (Authentication), 2 (Users/Roles/Permissions CRUD), 3 (Authorization Middleware) — all backend-only, fully built, tested (30/30), live-smoke-tested, and documented. Pushed to `github.com/gayathripriya99/AccessFlow`.
+
+**Not done yet, in order:** Phase 4 (first frontend client — no `frontend-*` folders exist), Phase 5 (Audit Log query/viewing API+UI — write path has existed since Phase 1), Phase 6 (Permission Simulator), Phase 7 (Advanced RBAC), Phase 8 (ABAC+multi-tenant). Also still open from section 11: the 13 missing docs in `doc_file/`'s planned suite, where the "Modern AI Chatbot module" fits, and confirming the MongoDB Atlas note doesn't change local/test DB usage. No CI/CD, no Vercel/Render/Atlas deployment configured.
+
+**Fastest way to resume:** read this file in full, then `backend/Phase-03.md`, then ask the user which of Phase 4, deployment/CI-CD, or the open `doc_file/` questions they want next.

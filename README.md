@@ -21,7 +21,7 @@ AccessFlow/
 |---|---|---|
 | 1 | Authentication | Complete — see [backend/Phase-01.md](backend/Phase-01.md) |
 | 2 | Users / Roles / Permissions CRUD | Complete — see [backend/Phase-02.md](backend/Phase-02.md) |
-| 3 | Authorization Middleware | Not started |
+| 3 | Authorization Middleware | Complete — see [backend/Phase-03.md](backend/Phase-03.md) |
 | 4 | Protected UI | Not started |
 | 5 | Audit Logs | Not started |
 | 6 | Permission Simulator | Not started |

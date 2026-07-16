@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import { createAuthenticatedUser } from './helpers/authenticatedUser';
+import { createAuthenticatedUser, createNonAdminUser } from './helpers/authenticatedUser';
 
 const app = createApp();
 
@@ -91,5 +91,19 @@ describe('Users API', () => {
 
     const getAfter = await request(app).get(`/api/v1/users/${userId}`).set('Authorization', auth);
     expect(getAfter.status).toBe(404);
+  });
+
+  it('rejects a non-admin authenticated user with 403', async () => {
+    const { accessToken, userId } = await createNonAdminUser(app);
+    const auth = `Bearer ${accessToken}`;
+
+    const list = await request(app).get('/api/v1/users').set('Authorization', auth);
+    expect(list.status).toBe(403);
+
+    const update = await request(app)
+      .patch(`/api/v1/users/${userId}`)
+      .set('Authorization', auth)
+      .send({ name: 'Self Rename Attempt' });
+    expect(update.status).toBe(403);
   });
 });

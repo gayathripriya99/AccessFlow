@@ -1,18 +1,28 @@
 import { Router } from 'express';
 import { AuthController } from '../../controllers/AuthController';
 import { AuthService } from '../../services/AuthService';
+import { AdminBootstrapService } from '../../services/AdminBootstrapService';
 import { UserRepository } from '../../repositories/UserRepository';
 import { RefreshTokenRepository } from '../../repositories/RefreshTokenRepository';
 import { AuditLogRepository } from '../../repositories/AuditLogRepository';
+import { RoleRepository } from '../../repositories/RoleRepository';
+import { PermissionRepository } from '../../repositories/PermissionRepository';
 import { validateRequest } from '../../middlewares/validateRequest';
 import { authRateLimiter } from '../../middlewares/rateLimiter';
 import { requireAuth } from '../../middlewares/requireAuth';
 import { loginSchema, registerSchema } from '../../validators/auth.validators';
 
+const userRepository = new UserRepository();
+const adminBootstrapService = new AdminBootstrapService(
+  userRepository,
+  new RoleRepository(),
+  new PermissionRepository(),
+);
 const authService = new AuthService(
-  new UserRepository(),
+  userRepository,
   new RefreshTokenRepository(),
   new AuditLogRepository(),
+  adminBootstrapService,
 );
 const authController = new AuthController(authService);
 
