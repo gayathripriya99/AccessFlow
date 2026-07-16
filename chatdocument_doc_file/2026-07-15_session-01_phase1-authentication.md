@@ -332,3 +332,24 @@ When the user says "continue" (or otherwise references this chat) to resume Phas
 ### Current git state
 
 About to commit this archive update alone (no source changes) and push to the existing remote — same procedure as every prior checkpoint. Check `git log --oneline -3` on resume; if this section's commit is the tip of `main`, Phase 3 genuinely has not started in code yet.
+
+---
+
+## 13. GitHub account/repo rename — 2026-07-16
+
+Between sessions, the user renamed their GitHub account and this repository (confirmed via a screenshot of the new location, and independently verified with `git ls-remote` before switching anything — the new URL resolved to the exact same commit, `caa561f`, that was the tip of `main` before the rename, confirming this is a GitHub username+repo rename with auto-redirect, not a different/new repository):
+
+- **Account:** `gayathripriyacvg-afk` → **`gayathripriya99`**
+- **Repo:** `RBAC_project` → **`AccessFlow`**
+- New canonical URL: `https://github.com/gayathripriya99/AccessFlow`
+
+**Updated:**
+- Local git remote: `git remote set-url origin git@github-accessflow:gayathripriya99/AccessFlow.git` (the SSH host alias `github-accessflow` itself is unchanged — it's just a local nickname pointing at `github.com` with the dedicated key from section 8; only the owner/repo path in the URL changed).
+- `CLAUDE.md`'s reference to the repo location.
+- **Not changed, intentionally:** every historical mention of `gayathripriyacvg-afk`/`RBAC_project` earlier in this archive (sections 8, 9, 10) and in `backend/Phase-01.md`'s local directory-structure diagram (`RBAC_Project/` there is the local folder name on disk, `e:\RBAC_Project\`, which has not been renamed — unrelated to the GitHub account/repo name). Those are accurate historical/local-path records and should not be retroactively edited.
+
+This rename did not require touching the SSH key itself, `~/.ssh/config`, or the repo-local git identity (`user.name`/`user.email`) set up in section 8 — none of that depends on the GitHub username or repo name, only on the SSH key being registered to *some* account, which it still is.
+
+### Resuming Phase 3 after this
+
+Nothing about the rename changes the Phase 3 pause point from section 12 — the bootstrap-strategy question is still open and still the first thing to resolve before writing any Phase 3 code.
