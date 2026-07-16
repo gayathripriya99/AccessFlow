@@ -298,3 +298,37 @@ Both `CLAUDE.md` and root `README.md` had hardcoded links to the now-deleted `do
 - Whether the user will author/paste in docs `01`–`14` themselves, or wants Claude to draft them.
 - Where the "Modern AI Chatbot module" build goal fits into the existing 8-phase roadmap (it doesn't map to any of Phases 1–8 as originally defined) — new Phase 9, or folded into an existing phase?
 - Whether "MongoDB Atlas" being named explicitly (vs. the original's generic "MongoDB") means local/in-memory MongoDB should be dropped from dev/test workflows going forward, or just that *production* deployment specifically targets Atlas (the latter was already true per the old `12_GITHUB_DEPLOYMENT_MASTER_GUIDE.md`, so likely no actual change — but worth confirming rather than assuming).
+
+---
+
+## 12. Phase 3 (Authorization Middleware) — STARTED THEN PAUSED, no code written, 2026-07-16
+
+User said "continue" (the generic go-ahead). Per section 10's "next steps," that meant starting **Phase 3: Authorization Middleware** — adding real permission-based checks on top of the Phase 2 CRUD endpoints, which are currently guarded by `requireAuth` only (proves identity, no permission check — documented as a deliberate, temporary gap in `backend/Phase-02.md`).
+
+### The one real design question, raised via plan mode before writing any code
+
+Phase 3 makes permission checks real, but a brand-new deployment has **zero** permissions/roles/users with any grant — so nobody could ever create the first permission or role via the now-guarded API (a bootstrapping deadlock). This needs a deliberate answer before implementation, not a silent default, because it's a genuine architectural fork with different tradeoffs:
+
+1. **First registered user auto-becomes admin** — on the very first `/auth/register` call (when `User.countDocuments() === 0`), auto-create a fixed baseline set of Permission docs (all CRUD actions across users/roles/permissions) and an `admin` Role bundling them, and assign it to that first user. Self-contained, no extra script, and happens to work naturally for tests too (each `mongodb-memory-server` test DB starts empty, so the first `createAuthenticatedUser()` call in each test file would auto-become admin).
+2. **Standalone `npm run seed` script** — separate from the HTTP API, takes an email argument, creates the baseline + assigns admin to an already-registered user. More explicit/manual; needs to be run in every fresh environment (including — awkwardly — every test run, unless tests invoke it directly).
+3. **`ADMIN_EMAIL` env var** — whenever a user with that exact email registers/logs in, auto-grant them the admin role (created on demand). Explicit and configurable per environment, but introduces a special-cased identity check that lives outside the normal permission-resolution path (arguably in tension with "permissions are the source of truth, never special-case an identity" from the RBAC rules — worth weighing against options 1/2 for that reason specifically).
+
+**This question was asked via `AskUserQuestion` and the user did not pick an option** — instead they said, in effect: pause here, archive this exact point, push whatever exists (there's no new code to push — this is just making sure the archive update lands on GitHub), and wait for an explicit "continue" that refers back to this chat/archive before resuming.
+
+### State right now
+
+- **Zero Phase 3 source code exists.** No new models, middleware, or route changes. The plan file at `C:\Users\HP\.claude\plans\lucky-toasting-willow.md` reflects this paused state (not a real implementation plan — just a record that planning stopped here).
+- Phase 2 remains exactly as pushed in commit `511fc40` — nothing has changed in `backend/src` since then.
+- The only change in this section's timeframe is this archive update itself (and the corresponding commit/push of it).
+
+### Exact resume instructions
+
+When the user says "continue" (or otherwise references this chat) to resume Phase 3:
+
+1. **Re-ask the bootstrap-strategy question first** (the three options above) — do not assume an answer, and do not silently default to option 1 just because it's simplest/recommended. If the user answers inline instead of through a formal question, that's fine too — just don't skip past this decision.
+2. Once decided, the rest of Phase 3 is fairly mechanical and follows the same clean-architecture pattern as Phases 1–2: a permission-resolution helper (user → roles → flattened permission-name set), a `requirePermission(...)` middleware factory (reject with 403 if the resolved set doesn't contain the required permission(s) — **never** check `role === "Admin"` directly, per the master doc's RBAC rule, restated in `CLAUDE.md`), apply it to each Phase 2 route in place of/alongside `requireAuth`, and — importantly — update `tests/helpers/authenticatedUser.ts` and the Phase 2 test suites, since every existing Phase 2 test currently registers a plain user with zero roles/permissions; once Phase 3 lands, those tests will start getting 403s unless the test helper is updated to grant whatever the chosen bootstrap strategy provides (or a new explicit test helper is added for creating a permissioned user).
+3. Suggested permission-naming convention to carry forward (not yet decided/committed, just a reasonable default worth confirming): `{resource}.{action}` with `resource ∈ {users, roles, permissions}` and `action ∈ {create, read, update, delete}` — 12 permissions total, matching the lowercase-dot-separated format Phase 2's Zod validators already enforce for permission names.
+
+### Current git state
+
+About to commit this archive update alone (no source changes) and push to the existing remote — same procedure as every prior checkpoint. Check `git log --oneline -3` on resume; if this section's commit is the tip of `main`, Phase 3 genuinely has not started in code yet.
