@@ -99,7 +99,7 @@ describe('Permissions API', () => {
   it('returns 404 for a non-existent permission id and 400 for a malformed one', async () => {
     const auth = await authHeader();
     const missing = await request(app)
-      .get('/api/v1/permissions/64b64b64b64b64b64b64b64')
+      .get('/api/v1/permissions/507f1f77bcf86cd799439011')
       .set('Authorization', auth);
     expect(missing.status).toBe(404);
 

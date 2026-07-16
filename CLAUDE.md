@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-**AccessFlow** — a portfolio-quality, production-grade Enterprise IAM/RBAC platform. Full spec: [doc_files/00_AI_MASTER_INSTRUCTIONS_AccessFlow.md](doc_files/00_AI_MASTER_INSTRUCTIONS_AccessFlow.md). Deployment/repo conventions: [doc_files/12_GITHUB_DEPLOYMENT_MASTER_GUIDE.md](doc_files/12_GITHUB_DEPLOYMENT_MASTER_GUIDE.md). Read both before starting work — the summaries below are not substitutes.
+**AccessFlow** — a portfolio-quality, production-grade Enterprise IAM/RBAC platform. Master spec: [doc_file/00_AI_MASTER_INSTRUCTIONS_PRO.md](doc_file/00_AI_MASTER_INSTRUCTIONS_PRO.md). That file lists a planned 14-document suite (`01_PRODUCT_REQUIREMENTS.md` through `14_INTERVIEW_PREPARATION.md`) — as of now **only doc `00` exists**; the rest haven't been authored yet, so don't assume specs beyond what `00` states and what's already built. (The original, more detailed `doc_files/` folder — including the GitHub/deployment conventions doc — was replaced by this condensed version outside of any Claude session; its content is no longer in the repo, only summarized in `chatdocument_doc_file/`.)
 
-Progress is tracked per-phase in `backend/Phase-XX.md` files and in the root [README.md](README.md) phase table. **Phase 1 (Authentication) is complete.** Read the most recent `Phase-XX.md` before starting new work to know exactly what exists.
+Progress is tracked per-phase in `backend/Phase-XX.md` files and in the root [README.md](README.md) phase table. **Phases 1 (Authentication) and 2 (Users/Roles/Permissions CRUD) are complete.** Read the most recent `Phase-XX.md` before starting new work to know exactly what exists. The repo is pushed to `github.com/gayathripriyacvg-afk/RBAC_project` (`main` branch) via a dedicated repo-local git identity/SSH key — see `chatdocument_doc_file/` for the exact setup history if that ever needs revisiting.
 
 ## Commands (run from `backend/`)
 
@@ -21,7 +21,7 @@ npm test            # Jest + Supertest, in-memory MongoDB (mongodb-memory-server
 npm run test:watch
 ```
 
-Single test file: `npx jest tests/auth.test.ts --runInBand`. Env vars for `npm run dev`/`start` come from `backend/.env` (copy from `.env.example`); tests get their own env via `tests/env.setup.ts` and never touch `.env`.
+Single test file: `npx jest tests/auth.test.ts --runInBand` (also `permissions.test.ts`, `roles.test.ts`, `users.test.ts`). Env vars for `npm run dev`/`start` come from `backend/.env` (copy from `.env.example`); tests get their own env via `tests/env.setup.ts` and never touch `.env`.
 
 ## Repository layout
 
@@ -39,16 +39,18 @@ routes → controllers → services → repositories → MongoDB (Mongoose model
 - `src/repositories/*` — the only layer allowed to touch Mongoose models directly.
 - `src/models/*` — Mongoose schemas.
 - `src/config/*` — env loader (`env.ts`, throws on missing required vars at import time), DB connection, pino logger.
-- `src/middlewares/*` — `errorHandler`/`notFoundHandler` (centralized JSON error shape via `ApiError`), `validateRequest` (Zod), `rateLimiter`, `requireAuth` (verifies bearer JWT, populates `req.auth` — this is authentication only, **not** authorization/permission-checking, which is Phase 3).
-- `src/utils/*` — `ApiError`, `asyncHandler`, JWT sign/verify (`jwt.ts`), refresh-token hashing (`hashToken.ts`, SHA-256 — deliberately not bcrypt since refresh tokens are already high-entropy), cookie helpers.
+- `src/middlewares/*` — `errorHandler`/`notFoundHandler` (centralized JSON error shape via `ApiError`), `validateRequest` (Zod), `rateLimiter`, `validateObjectIdParam` (rejects malformed `:id` params with 400 before hitting the service), `requireAuth` (verifies bearer JWT, populates `req.auth` — this is authentication only, **not** authorization/permission-checking, which is still Phase 3 and not yet built).
+- `src/utils/*` — `ApiError`, `asyncHandler`, JWT sign/verify (`jwt.ts`), refresh-token hashing (`hashToken.ts`, SHA-256 — deliberately not bcrypt since refresh tokens are already high-entropy), cookie helpers, `pagination.ts` (shared `parsePagination`/`buildPaginationMeta` used by every list endpoint), `objectId.ts` (`isValidObjectId`, `toObjectIdArray`).
 
 New feature work should follow this exact layering — don't put logic in controllers or routes.
 
-## RBAC rules (apply from Phase 2 onward, keep in mind now)
+## RBAC rules (Permission/Role models exist now — Phase 2; enforcement is still Phase 3)
 
-- Permissions are the source of truth. Users may have multiple roles; roles bundle permissions.
+- Permissions are the source of truth. Users may have multiple roles (`User.roles: ObjectId[]`, `src/models/User.ts`); roles bundle permissions (`Role.permissions: ObjectId[]`, `src/models/Role.ts`).
 - **Never** check `role === "Admin"` directly anywhere in authorization logic — always resolve and evaluate the permission set.
-- `User.roles` (`src/models/User.ts`) is a reserved `ObjectId[]` field, currently unused — the `Role` collection doesn't exist until Phase 2.
+- `/api/v1/permissions`, `/api/v1/roles`, `/api/v1/users` (Phase 2, `src/routes/v1/{permission,role,user}.routes.ts`) provide full CRUD over this data model, but are currently guarded by `requireAuth` **only** — any authenticated user can manage any resource. This is intentional and documented (see `backend/Phase-02.md`), not a bug to silently patch; Phase 3 is what adds real permission checks on top.
+- Deleting a `Permission`/`Role` cascades: it's pulled out of every `Role`/`User` that referenced it (see `PermissionRepository.deleteById`/`RoleRepository.deleteById`). Deleting a `User` revokes all their refresh tokens.
+- There is no seed data — no default "Admin" role or bootstrap permission set exists. Every environment starts with zero permissions/roles.
 
 ## Auth/session design notes (non-obvious, worth knowing before touching this code)
 
@@ -56,14 +58,16 @@ New feature work should follow this exact layering — don't put logic in contro
 - Refresh token rotation includes reuse detection: presenting an already-rotated-out (revoked) token revokes **all** active refresh tokens for that user (treats the session as compromised), not just the one presented.
 - The refresh token is delivered only via an httpOnly cookie scoped to `path: /api/v1/auth` — never returned in a JSON body.
 - `refreshtokens.expiresAt` has a Mongo TTL index (`expireAfterSeconds: 0`) — expired docs are auto-purged, no cron needed.
-- Audit logging (`AuditLog` model/`AuditLogRepository`) already writes auth events (register/login success+failure/refresh/reuse-detected/logout) this phase, but there's no query/viewing API yet — that's Phase 5's job. Don't build the audit *viewer* prematurely.
+- Audit logging (`AuditLog` model/`AuditLogRepository`) writes auth events (register/login success+failure/refresh/reuse-detected/logout) and, since Phase 2, Permission/Role/User mutation events too — but there's still no query/viewing API. That's Phase 5's job. Don't build the audit *viewer* prematurely.
+- `User`, `Permission`, and `Role` schemas all set `toJSON: toJSONOptions` (`src/models/schemaOptions.ts`) so API responses expose `id` instead of Mongo's `_id`/`__v` — Mongoose does **not** do this by default (its `id` virtual isn't included in `toJSON()` output unless configured). If you add a new model whose raw documents get serialized directly to a client, apply the same option or you'll silently leak `_id` instead of `id`.
 
 ## GitHub/deployment conventions
 
-Before pushing to GitHub or touching deployment (Vercel/Render/MongoDB Atlas/GitHub Actions), re-read [doc_files/12_GITHUB_DEPLOYMENT_MASTER_GUIDE.md](doc_files/12_GITHUB_DEPLOYMENT_MASTER_GUIDE.md) in full — it specifies a dedicated GitHub account/SSH identity for this repo (must not overwrite any existing global git/SSH config), the target repo name/structure, and hard rules: never request/store passwords, private keys, or PATs, and always pause for explicit confirmation before any action that touches the user's accounts or local machine credentials.
+The dedicated-SSH-identity/deployment guide that originally lived at `doc_files/12_GITHUB_DEPLOYMENT_MASTER_GUIDE.md` has been removed from the repo (superseded by the new `doc_file/00_AI_MASTER_INSTRUCTIONS_PRO.md`, which lists a forthcoming `10_GITHUB_SETUP.md`/`11_RENDER_VERCEL_ATLAS.md` in its planned doc suite — neither exists yet). Until those are authored, the applicable rules are recorded in `chatdocument_doc_file/` (the exact SSH host alias, repo-local git identity, and remote already set up for this repo) and the general hard rules still apply regardless of which doc states them: never request/store passwords, private keys, or PATs, and always pause for explicit confirmation before any action that touches the user's accounts or local machine credentials.
 
 ## Cross-cutting requirements (apply once frontend work starts, Phase 4+)
 
 - i18n: no hardcoded UI text — translation files only (English, Hindi, Kannada, French).
 - Responsive breakpoints: 320, 375, 425, 768, 1024, 1280, 1440, 1920+.
 - Every completed feature needs a README update, API summary, DB-change notes, and a `Phase-XX.md` end-of-chat summary (see `backend/Phase-01.md` for the format).
+- The new master doc adds two goals not in the original spec: a **"Modern AI Chatbot module"** and explicit **MongoDB Atlas** (vs. generic MongoDB) — neither has been scoped into a phase yet. Flag this to the user before assuming which phase should absorb them.

@@ -57,7 +57,7 @@ describe('Users API', () => {
     const badRole = await request(app)
       .patch(`/api/v1/users/${userId}`)
       .set('Authorization', auth)
-      .send({ roles: ['64b64b64b64b64b64b64b64'] });
+      .send({ roles: ['507f1f77bcf86cd799439011'] });
     expect(badRole.status).toBe(400);
 
     const roleRes = await request(app)

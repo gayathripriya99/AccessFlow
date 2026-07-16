@@ -2,7 +2,7 @@
 
 Enterprise Identity & Access Management (IAM) platform — permission-based RBAC, built as a portfolio-quality, production-grade system with a frontend-agnostic API.
 
-Full specification: [doc_files/00_AI_MASTER_INSTRUCTIONS_AccessFlow.md](doc_files/00_AI_MASTER_INSTRUCTIONS_AccessFlow.md)
+Master spec: [doc_file/00_AI_MASTER_INSTRUCTIONS_PRO.md](doc_file/00_AI_MASTER_INSTRUCTIONS_PRO.md)
 
 ## Repository layout
 
@@ -20,7 +20,7 @@ AccessFlow/
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Authentication | Complete — see [backend/Phase-01.md](backend/Phase-01.md) |
-| 2 | Users / Roles / Permissions CRUD | Not started |
+| 2 | Users / Roles / Permissions CRUD | Complete — see [backend/Phase-02.md](backend/Phase-02.md) |
 | 3 | Authorization Middleware | Not started |
 | 4 | Protected UI | Not started |
 | 5 | Audit Logs | Not started |

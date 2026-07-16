@@ -42,7 +42,7 @@ describe('Roles API', () => {
     const res = await request(app)
       .post('/api/v1/roles')
       .set('Authorization', auth)
-      .send({ name: 'ghost-role', description: 'x', permissions: ['64b64b64b64b64b64b64b64'] });
+      .send({ name: 'ghost-role', description: 'x', permissions: ['507f1f77bcf86cd799439011'] });
 
     expect(res.status).toBe(400);
   });
