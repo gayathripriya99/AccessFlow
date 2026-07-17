@@ -36,6 +36,12 @@ Built: `src/config/navigation.ts` (single `NAV_ITEMS` source), `src/components/S
 
 ## 6. Where things stand / next steps
 
-**Done:** Session 02's Phase 4 work is committed and pushed (`1a49765`). This session's expansion is complete and build/lint/test-verified but **not yet committed** — user said "commit locally, do not push until I approve," and that commit hasn't happened yet as of the end of this entry.
+**Done:** Session 02's Phase 4 base is committed and pushed (`1a49765`). This session's 19-item expansion is complete, build/lint/test-verified, committed locally as `e294e5a` ("Phase 4 round 2: sidebar, 404/403 pages, session expiry, error states, a11y"). The user then explicitly asked to push it too ("also push to git so far did") — pushed to `origin/main` in the same turn as this update; `git log`/`git status` at the point this session paused should show `e294e5a` as `origin/main`'s tip with a clean working tree.
 
-**Immediate next step:** commit this round's changes locally (no push). Then, per `Phase-04.md`'s remaining-work list: a real browser click-through is the highest-value follow-up (nothing in this project has ever been opened in an actual browser); writing `*.test.tsx` files would also close that gap without needing a browser tool. The roadmap-reorder question is open and should be resolved before Phase 5 scoping starts, not assumed.
+## 7. Session paused here
+
+The user said: "pause and keep everything in chat doc when i say continue you should continue from this paused point also push to git so for did." This file is that record. At pause time:
+
+- **Committed and pushed:** everything through `e294e5a` (Phase 4 base + the full round-2 expansion below).
+- **Not started:** nothing from the 19-item list was skipped — all 19 were addressed (see `backend/Phase-04.md`'s "Round 2 additions" section for the item-by-item mapping). What's still open is the pre-existing backlog, unchanged by this session: no real browser click-through (no browser-automation tool in this environment), no `*.test.tsx` files, `frontend-angular`/`frontend-vue`/`frontend-nextjs` not built, the roadmap-reorder question unresolved, Phase 5+ not started.
+- **On "continue":** read this file (already done if you're reading it), then `backend/Phase-04.md`, confirm `git log`/`git status` still match the above (re-verify, don't assume time hasn't passed), then ask the user what's next rather than assuming — likely candidates per the remaining-work list are a browser click-through, writing frontend tests, resolving the roadmap-reorder question, or starting Phase 5.
