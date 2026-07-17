@@ -14,6 +14,7 @@ import type { Column } from '../components/DataTable';
 import { Pagination } from '../components/Pagination';
 import { SearchInput } from '../components/SearchInput';
 import { Button } from '../components/Button';
+import { ErrorState } from '../components/ErrorState';
 
 interface FormState {
   isActive: boolean;
@@ -30,7 +31,7 @@ export function UsersPage() {
   const [form, setForm] = useState<FormState>({ isActive: true, roles: [] });
   const [formError, setFormError] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['users', page, debouncedSearch],
     queryFn: () => listUsers({ page, limit: 10, search: debouncedSearch || undefined }),
   });
@@ -184,6 +185,8 @@ export function UsersPage() {
 
       {isLoading ? (
         <p role="status">{t('common.loading')}</p>
+      ) : isError ? (
+        <ErrorState error={error} onRetry={() => void refetch()} />
       ) : (
         <>
           <DataTable

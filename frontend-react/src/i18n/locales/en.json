@@ -23,7 +23,10 @@
     "active": "Active",
     "inactive": "Inactive",
     "submit": "Submit",
-    "noResults": "No results found."
+    "noResults": "No results found.",
+    "retry": "Retry",
+    "fieldRequired": "This field is required.",
+    "skipToContent": "Skip to content"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -31,7 +34,9 @@
     "roles": "Roles",
     "permissions": "Permissions",
     "logout": "Log out",
-    "language": "Language"
+    "language": "Language",
+    "toggleMenu": "Toggle navigation menu",
+    "mainNavigation": "Main navigation"
   },
   "auth": {
     "login": {
@@ -39,7 +44,8 @@
       "submit": "Log in",
       "noAccount": "Don't have an account?",
       "registerLink": "Register",
-      "invalidCredentials": "Invalid email or password."
+      "invalidCredentials": "Invalid email or password.",
+      "sessionExpired": "Your session has expired. Please log in again."
     },
     "register": {
       "title": "Create your AccessFlow account",
@@ -101,7 +107,11 @@
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "forbidden": "You don't have permission to do that.",
+    "forbiddenTitle": "Access denied",
     "notFound": "Not found.",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The page you're looking for doesn't exist or may have moved.",
+    "backToSafety": "Back to safety",
     "network": "Couldn't reach the server. Check your connection and try again."
   }
 }

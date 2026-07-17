@@ -10,6 +10,7 @@ import {
 } from '../api/permissions';
 import type { Permission } from '../api/types';
 import { getErrorMessage } from '../api/errors';
+import { validateNameDescription } from '../auth/validators';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { PermissionGate } from '../auth/PermissionGate';
 import { DataTable } from '../components/DataTable';
@@ -18,6 +19,7 @@ import { Pagination } from '../components/Pagination';
 import { SearchInput } from '../components/SearchInput';
 import { FormField } from '../components/FormField';
 import { Button } from '../components/Button';
+import { ErrorState } from '../components/ErrorState';
 
 interface FormState {
   name: string;
@@ -36,8 +38,9 @@ export function PermissionsPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ name: boolean; description: boolean } | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['permissions', page, debouncedSearch],
     queryFn: () => listPermissions({ page, limit: 10, search: debouncedSearch || undefined }),
   });
@@ -70,6 +73,7 @@ export function PermissionsPage() {
   function startCreate() {
     setForm(EMPTY_FORM);
     setFormError(null);
+    setFieldErrors(null);
     setEditingId(null);
     setCreating(true);
   }
@@ -77,6 +81,7 @@ export function PermissionsPage() {
   function startEdit(permission: Permission) {
     setForm({ name: permission.name, description: permission.description });
     setFormError(null);
+    setFieldErrors(null);
     setCreating(false);
     setEditingId(permission.id);
   }
@@ -86,11 +91,17 @@ export function PermissionsPage() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setFormError(null);
+    setFieldErrors(null);
   }
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     setFormError(null);
+    const errors = validateNameDescription(form);
+    setFieldErrors(errors);
+    if (errors) {
+      return;
+    }
     if (editingId) {
       updateMutation.mutate({ id: editingId, input: form });
     } else {
@@ -151,6 +162,7 @@ export function PermissionsPage() {
       {formOpen && (
         <form
           onSubmit={onSubmit}
+          noValidate
           className="flex flex-col gap-4 rounded-md border border-gray-200 bg-white p-4"
         >
           <h2 className="text-sm font-semibold text-gray-900">
@@ -160,13 +172,13 @@ export function PermissionsPage() {
             label={t('common.name')}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
+            error={fieldErrors?.name ? t('common.fieldRequired') : undefined}
           />
           <FormField
             label={t('common.description')}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            required
+            error={fieldErrors?.description ? t('common.fieldRequired') : undefined}
           />
           {formError && (
             <p className="text-sm text-red-600" role="alert">
@@ -186,6 +198,8 @@ export function PermissionsPage() {
 
       {isLoading ? (
         <p role="status">{t('common.loading')}</p>
+      ) : isError ? (
+        <ErrorState error={error} onRetry={() => void refetch()} />
       ) : (
         <>
           <DataTable

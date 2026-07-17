@@ -10,6 +10,7 @@ type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 interface AuthContextValue {
   status: AuthStatus;
   currentUser: CurrentUser | null;
+  sessionExpired: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (input: authApi.RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
@@ -21,15 +22,21 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
-  const clearSession = useCallback(() => {
+  // `reason: 'expired'` distinguishes an active session dying mid-use (axios
+  // interceptor's refresh-retry failed) from a plain logged-out state (initial
+  // silent-refresh on mount finding no cookie, or an explicit logout) — only
+  // the former should show LoginPage's "your session expired" banner.
+  const clearSession = useCallback((reason?: 'expired') => {
     setAccessToken(null);
     setCurrentUser(null);
     setStatus('unauthenticated');
+    setSessionExpired(reason === 'expired');
   }, []);
 
   useEffect(() => {
-    setOnAuthFailure(clearSession);
+    setOnAuthFailure(() => clearSession('expired'));
     return () => setOnAuthFailure(null);
   }, [clearSession]);
 
@@ -76,8 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ status, currentUser, login, register, logout, hasPermission }),
-    [status, currentUser, login, register, logout, hasPermission],
+    () => ({ status, currentUser, sessionExpired, login, register, logout, hasPermission }),
+    [status, currentUser, sessionExpired, login, register, logout, hasPermission],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

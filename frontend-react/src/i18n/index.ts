@@ -25,6 +25,15 @@ void i18n
     },
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
+  })
+  .then(() => {
+    document.documentElement.lang = i18n.resolvedLanguage ?? 'en';
   });
+
+// Keeps <html lang> in sync with the active UI language (screen readers and
+// browser translation tools rely on it), not just en.json's static default.
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.lang = lng;
+});
 
 export default i18n;

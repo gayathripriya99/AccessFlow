@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { RolesPage } from './pages/RolesPage';
 import { PermissionsPage } from './pages/PermissionsPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 function App() {
   return (
@@ -19,10 +20,10 @@ function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardPage />} />
             <Route
-              path="/users"
+              path="users"
               element={
                 <RequirePermission permission="users.read">
                   <UsersPage />
@@ -30,7 +31,7 @@ function App() {
               }
             />
             <Route
-              path="/roles"
+              path="roles"
               element={
                 <RequirePermission permission="roles.read">
                   <RolesPage />
@@ -38,17 +39,25 @@ function App() {
               }
             />
             <Route
-              path="/permissions"
+              path="permissions"
               element={
                 <RequirePermission permission="permissions.read">
                   <PermissionsPage />
                 </RequirePermission>
               }
             />
+            {/*
+              Single catch-all for every unmatched path, nested here (not also
+              duplicated at the top level) because ProtectedRoute is pathless —
+              it matches any URL structurally and only decides via its own
+              render logic whether to show this NotFoundPage (authenticated,
+              nav still visible) or redirect to /login (unauthenticated),
+              before this route's element ever renders. A second top-level "*"
+              would just tie with this one on route-matching score.
+            */}
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
-
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   );

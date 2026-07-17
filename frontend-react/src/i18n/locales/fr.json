@@ -23,7 +23,10 @@
     "active": "Actif",
     "inactive": "Inactif",
     "submit": "Envoyer",
-    "noResults": "Aucun résultat trouvé."
+    "noResults": "Aucun résultat trouvé.",
+    "retry": "Réessayer",
+    "fieldRequired": "Ce champ est obligatoire.",
+    "skipToContent": "Aller au contenu"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -31,7 +34,9 @@
     "roles": "Rôles",
     "permissions": "Autorisations",
     "logout": "Déconnexion",
-    "language": "Langue"
+    "language": "Langue",
+    "toggleMenu": "Basculer le menu de navigation",
+    "mainNavigation": "Navigation principale"
   },
   "auth": {
     "login": {
@@ -39,7 +44,8 @@
       "submit": "Se connecter",
       "noAccount": "Vous n'avez pas de compte ?",
       "registerLink": "S'inscrire",
-      "invalidCredentials": "E-mail ou mot de passe invalide."
+      "invalidCredentials": "E-mail ou mot de passe invalide.",
+      "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
     },
     "register": {
       "title": "Créez votre compte AccessFlow",
@@ -101,7 +107,11 @@
   "errors": {
     "generic": "Une erreur s'est produite. Veuillez réessayer.",
     "forbidden": "Vous n'avez pas la permission de faire cela.",
+    "forbiddenTitle": "Accès refusé",
     "notFound": "Introuvable.",
+    "notFoundTitle": "Page introuvable",
+    "notFoundBody": "La page que vous recherchez n'existe pas ou a peut-être été déplacée.",
+    "backToSafety": "Retour en lieu sûr",
     "network": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez."
   }
 }

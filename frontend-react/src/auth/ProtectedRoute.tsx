@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
 
 export function ProtectedRoute() {
-  const { status } = useAuth();
+  const { status, sessionExpired } = useAuth();
   const { t } = useTranslation();
 
   if (status === 'loading') {
@@ -15,7 +15,7 @@ export function ProtectedRoute() {
   }
 
   if (status === 'unauthenticated') {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={sessionExpired ? { sessionExpired: true } : undefined} />;
   }
 
   return <Outlet />;

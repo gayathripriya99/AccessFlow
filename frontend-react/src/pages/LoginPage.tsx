@@ -15,7 +15,9 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const justRegistered = Boolean((location.state as { registered?: boolean } | null)?.registered);
+  const navState = location.state as { registered?: boolean; sessionExpired?: boolean } | null;
+  const justRegistered = Boolean(navState?.registered);
+  const sessionExpired = Boolean(navState?.sessionExpired);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
@@ -41,6 +43,11 @@ export function LoginPage() {
         {justRegistered && (
           <p className="mb-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700" role="status">
             {t('auth.register.success')}
+          </p>
+        )}
+        {sessionExpired && (
+          <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700" role="alert">
+            {t('auth.login.sessionExpired')}
           </p>
         )}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
