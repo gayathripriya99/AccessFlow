@@ -9,10 +9,10 @@ Master spec: [doc_file/00_AI_MASTER_INSTRUCTIONS_PRO.md](doc_file/00_AI_MASTER_I
 ```
 AccessFlow/
 ├── backend/            # Node.js + Express + MongoDB API (frontend-agnostic)
-├── frontend-react/      # added starting Phase 4
-├── frontend-angular/    # added starting Phase 4
-├── frontend-vue/        # added starting Phase 4
-└── frontend-nextjs/     # added starting Phase 4
+├── frontend-react/      # Phase 4 — React protected UI
+├── frontend-angular/    # not yet built
+├── frontend-vue/        # not yet built
+└── frontend-nextjs/     # not yet built
 ```
 
 ## Phase status
@@ -22,7 +22,7 @@ AccessFlow/
 | 1 | Authentication | Complete — see [backend/Phase-01.md](backend/Phase-01.md) |
 | 2 | Users / Roles / Permissions CRUD | Complete — see [backend/Phase-02.md](backend/Phase-02.md) |
 | 3 | Authorization Middleware | Complete — see [backend/Phase-03.md](backend/Phase-03.md) |
-| 4 | Protected UI | Not started |
+| 4 | Protected UI (React) | Complete — see [backend/Phase-04.md](backend/Phase-04.md) |
 | 5 | Audit Logs | Not started |
 | 6 | Permission Simulator | Not started |
 | 7 | Advanced RBAC | Not started |

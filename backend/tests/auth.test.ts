@@ -77,6 +77,11 @@ describe('Auth API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.email).toBe(credentials.email);
+      // This is the first (and only) user in this test's DB, so admin
+      // bootstrap (Phase 3) grants them the full baseline permission set.
+      expect(res.body.data.roles).toEqual(['admin']);
+      expect(res.body.data.permissions).toEqual(expect.arrayContaining(['users.read', 'roles.create']));
+      expect(res.body.data.permissions).toHaveLength(11);
     });
   });
 

@@ -1,0 +1,107 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "loading": "Loading…",
+    "actions": "Actions",
+    "name": "Name",
+    "description": "Description",
+    "email": "Email",
+    "password": "Password",
+    "confirmDelete": "Are you sure you want to delete this?",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back",
+    "page": "Page",
+    "of": "of",
+    "close": "Close",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "submit": "Submit",
+    "noResults": "No results found."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "logout": "Log out",
+    "language": "Language"
+  },
+  "auth": {
+    "login": {
+      "title": "Log in to AccessFlow",
+      "submit": "Log in",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register",
+      "invalidCredentials": "Invalid email or password."
+    },
+    "register": {
+      "title": "Create your AccessFlow account",
+      "name": "Full name",
+      "submit": "Register",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Log in",
+      "success": "Account created — please log in."
+    },
+    "validation": {
+      "emailRequired": "Enter a valid email address.",
+      "passwordRequired": "Password is required.",
+      "passwordWeak": "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a number.",
+      "nameRequired": "Enter your name."
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}",
+    "yourRoles": "Your roles",
+    "yourPermissions": "Your permissions",
+    "noRoles": "You have no roles assigned yet. An administrator needs to grant you access."
+  },
+  "users": {
+    "title": "Users",
+    "searchPlaceholder": "Search by name or email…",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "status": "Status",
+      "roles": "Roles"
+    },
+    "editUser": "Edit user",
+    "assignRoles": "Assigned roles",
+    "deleteConfirm": "Delete this user? This immediately revokes all of their sessions.",
+    "updated": "User updated.",
+    "deleted": "User deleted."
+  },
+  "roles": {
+    "title": "Roles",
+    "createRole": "Create role",
+    "editRole": "Edit role",
+    "searchPlaceholder": "Search roles…",
+    "permissions": "Permissions",
+    "deleteConfirm": "Delete this role? It will be removed from every user who has it.",
+    "created": "Role created.",
+    "updated": "Role updated.",
+    "deleted": "Role deleted."
+  },
+  "permissions": {
+    "title": "Permissions",
+    "createPermission": "Create permission",
+    "editPermission": "Edit permission",
+    "searchPlaceholder": "Search permissions…",
+    "deleteConfirm": "Delete this permission? It will be removed from every role that has it.",
+    "created": "Permission created.",
+    "updated": "Permission updated.",
+    "deleted": "Permission deleted."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "forbidden": "You don't have permission to do that.",
+    "notFound": "Not found.",
+    "network": "Couldn't reach the server. Check your connection and try again."
+  }
+}

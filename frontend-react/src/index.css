@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+/*
+ * Breakpoint scale per the AccessFlow master spec (doc_file/00_AI_MASTER_INSTRUCTIONS_PRO.md):
+ * 320 / 375 / 425 / 768 / 1024 / 1280 / 1440 / 1920 — replaces Tailwind's
+ * defaults entirely so `sm:`/`md:`/etc. map to these exact figures.
+ */
+@theme {
+  --breakpoint-xs: 320px;
+  --breakpoint-sm: 375px;
+  --breakpoint-md: 425px;
+  --breakpoint-lg: 768px;
+  --breakpoint-xl: 1024px;
+  --breakpoint-2xl: 1280px;
+  --breakpoint-3xl: 1440px;
+  --breakpoint-4xl: 1920px;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+}

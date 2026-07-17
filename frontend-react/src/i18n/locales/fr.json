@@ -1,0 +1,107 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "search": "Rechercher",
+    "loading": "Chargement…",
+    "actions": "Actions",
+    "name": "Nom",
+    "description": "Description",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "confirmDelete": "Voulez-vous vraiment supprimer ceci ?",
+    "yes": "Oui",
+    "no": "Non",
+    "back": "Retour",
+    "page": "Page",
+    "of": "sur",
+    "close": "Fermer",
+    "status": "Statut",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "submit": "Envoyer",
+    "noResults": "Aucun résultat trouvé."
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "users": "Utilisateurs",
+    "roles": "Rôles",
+    "permissions": "Autorisations",
+    "logout": "Déconnexion",
+    "language": "Langue"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion à AccessFlow",
+      "submit": "Se connecter",
+      "noAccount": "Vous n'avez pas de compte ?",
+      "registerLink": "S'inscrire",
+      "invalidCredentials": "E-mail ou mot de passe invalide."
+    },
+    "register": {
+      "title": "Créez votre compte AccessFlow",
+      "name": "Nom complet",
+      "submit": "S'inscrire",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "loginLink": "Se connecter",
+      "success": "Compte créé — veuillez vous connecter."
+    },
+    "validation": {
+      "emailRequired": "Entrez une adresse e-mail valide.",
+      "passwordRequired": "Le mot de passe est requis.",
+      "passwordWeak": "Le mot de passe doit comporter au moins 8 caractères et inclure une majuscule, une minuscule et un chiffre.",
+      "nameRequired": "Entrez votre nom."
+    }
+  },
+  "dashboard": {
+    "welcome": "Bienvenue, {{name}}",
+    "yourRoles": "Vos rôles",
+    "yourPermissions": "Vos autorisations",
+    "noRoles": "Aucun rôle ne vous a encore été attribué. Un administrateur doit vous accorder l'accès."
+  },
+  "users": {
+    "title": "Utilisateurs",
+    "searchPlaceholder": "Rechercher par nom ou e-mail…",
+    "columns": {
+      "name": "Nom",
+      "email": "E-mail",
+      "status": "Statut",
+      "roles": "Rôles"
+    },
+    "editUser": "Modifier l'utilisateur",
+    "assignRoles": "Rôles attribués",
+    "deleteConfirm": "Supprimer cet utilisateur ? Cela révoquera immédiatement toutes ses sessions.",
+    "updated": "Utilisateur mis à jour.",
+    "deleted": "Utilisateur supprimé."
+  },
+  "roles": {
+    "title": "Rôles",
+    "createRole": "Créer un rôle",
+    "editRole": "Modifier le rôle",
+    "searchPlaceholder": "Rechercher des rôles…",
+    "permissions": "Autorisations",
+    "deleteConfirm": "Supprimer ce rôle ? Il sera retiré de chaque utilisateur qui le possède.",
+    "created": "Rôle créé.",
+    "updated": "Rôle mis à jour.",
+    "deleted": "Rôle supprimé."
+  },
+  "permissions": {
+    "title": "Autorisations",
+    "createPermission": "Créer une autorisation",
+    "editPermission": "Modifier l'autorisation",
+    "searchPlaceholder": "Rechercher des autorisations…",
+    "deleteConfirm": "Supprimer cette autorisation ? Elle sera retirée de chaque rôle qui la possède.",
+    "created": "Autorisation créée.",
+    "updated": "Autorisation mise à jour.",
+    "deleted": "Autorisation supprimée."
+  },
+  "errors": {
+    "generic": "Une erreur s'est produite. Veuillez réessayer.",
+    "forbidden": "Vous n'avez pas la permission de faire cela.",
+    "notFound": "Introuvable.",
+    "network": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez."
+  }
+}

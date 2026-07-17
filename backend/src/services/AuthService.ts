@@ -4,6 +4,7 @@ import { UserRepository } from '../repositories/UserRepository';
 import { RefreshTokenRepository } from '../repositories/RefreshTokenRepository';
 import { AuditLogRepository } from '../repositories/AuditLogRepository';
 import { AdminBootstrapService } from './AdminBootstrapService';
+import { AuthorizationService } from './AuthorizationService';
 import { ApiError } from '../utils/ApiError';
 import { hashToken } from '../utils/hashToken';
 import {
@@ -48,6 +49,11 @@ export interface PublicUser {
   name: string;
 }
 
+export interface CurrentUser extends PublicUser {
+  roles: string[];
+  permissions: string[];
+}
+
 function toPublicUser(user: UserDocument): PublicUser {
   return { id: user._id.toString(), email: user.email, name: user.name };
 }
@@ -58,6 +64,7 @@ export class AuthService {
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly auditLogRepository: AuditLogRepository,
     private readonly adminBootstrapService: AdminBootstrapService,
+    private readonly authorizationService: AuthorizationService,
   ) {}
 
   async register(input: RegisterInput, context: RequestContext): Promise<PublicUser> {
@@ -170,12 +177,13 @@ export class AuthService {
     }
   }
 
-  async getCurrentUser(userId: string): Promise<PublicUser> {
+  async getCurrentUser(userId: string): Promise<CurrentUser> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw ApiError.notFound('User not found');
     }
-    return toPublicUser(user);
+    const { roleNames, permissionNames } = await this.authorizationService.resolveAccess(userId);
+    return { ...toPublicUser(user), roles: roleNames, permissions: Array.from(permissionNames) };
   }
 
   private async issueTokenPair(userId: Types.ObjectId, oldTokenId?: Types.ObjectId): Promise<AuthTokens> {
