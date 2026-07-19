@@ -36,7 +36,8 @@
     "logout": "Déconnexion",
     "language": "Langue",
     "toggleMenu": "Basculer le menu de navigation",
-    "mainNavigation": "Navigation principale"
+    "mainNavigation": "Navigation principale",
+    "auditLogs": "Journaux d'audit"
   },
   "auth": {
     "login": {
@@ -103,6 +104,23 @@
     "created": "Autorisation créée.",
     "updated": "Autorisation mise à jour.",
     "deleted": "Autorisation supprimée."
+  },
+  "auditLogs": {
+    "title": "Journaux d'audit",
+    "systemActor": "Système",
+    "columns": {
+      "when": "Quand",
+      "actor": "Auteur",
+      "action": "Action",
+      "ip": "Adresse IP",
+      "metadata": "Détails"
+    },
+    "filters": {
+      "action": "Action",
+      "allActions": "Toutes les actions",
+      "from": "Du",
+      "to": "Au"
+    }
   },
   "errors": {
     "generic": "Une erreur s'est produite. Veuillez réessayer.",

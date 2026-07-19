@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { RolesPage } from './pages/RolesPage';
 import { PermissionsPage } from './pages/PermissionsPage';
+import { AuditLogsPage } from './pages/AuditLogsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 function App() {
@@ -43,6 +44,14 @@ function App() {
               element={
                 <RequirePermission permission="permissions.read">
                   <PermissionsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="audit-logs"
+              element={
+                <RequirePermission permission="auditlogs.read">
+                  <AuditLogsPage />
                 </RequirePermission>
               }
             />

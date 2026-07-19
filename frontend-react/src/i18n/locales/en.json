@@ -36,7 +36,8 @@
     "logout": "Log out",
     "language": "Language",
     "toggleMenu": "Toggle navigation menu",
-    "mainNavigation": "Main navigation"
+    "mainNavigation": "Main navigation",
+    "auditLogs": "Audit Logs"
   },
   "auth": {
     "login": {
@@ -103,6 +104,23 @@
     "created": "Permission created.",
     "updated": "Permission updated.",
     "deleted": "Permission deleted."
+  },
+  "auditLogs": {
+    "title": "Audit Logs",
+    "systemActor": "System",
+    "columns": {
+      "when": "When",
+      "actor": "Actor",
+      "action": "Action",
+      "ip": "IP address",
+      "metadata": "Details"
+    },
+    "filters": {
+      "action": "Action",
+      "allActions": "All actions",
+      "from": "From",
+      "to": "To"
+    }
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

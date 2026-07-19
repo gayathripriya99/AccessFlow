@@ -11,4 +11,5 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'users', path: '/users', labelKey: 'nav.users', permission: 'users.read' },
   { key: 'roles', path: '/roles', labelKey: 'nav.roles', permission: 'roles.read' },
   { key: 'permissions', path: '/permissions', labelKey: 'nav.permissions', permission: 'permissions.read' },
+  { key: 'auditLogs', path: '/audit-logs', labelKey: 'nav.auditLogs', permission: 'auditlogs.read' },
 ];

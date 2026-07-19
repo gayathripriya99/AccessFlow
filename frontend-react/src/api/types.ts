@@ -63,6 +63,37 @@ export function isPopulatedRoles(roles: Role[] | string[]): roles is Role[] {
   return roles.length === 0 || typeof roles[0] !== 'string';
 }
 
+export const AUDIT_ACTIONS = [
+  'auth.register',
+  'auth.login.success',
+  'auth.login.failure',
+  'auth.refresh',
+  'auth.refresh.reuse_detected',
+  'auth.logout',
+  'permission.create',
+  'permission.update',
+  'permission.delete',
+  'role.create',
+  'role.update',
+  'role.delete',
+  'user.update',
+  'user.delete',
+] as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+export interface AuditLogEntry {
+  id: string;
+  userId: { id: string; name: string; email: string } | null;
+  action: AuditAction;
+  ip: string | null;
+  userAgent: string | null;
+  // Omitted from storage entirely (not `{}`) when nothing was passed at
+  // creation time — Mongoose's `minimize` option strips empty Mixed fields.
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
 export interface ApiErrorBody {
   error: {
     code: string;

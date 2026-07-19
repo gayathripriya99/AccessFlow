@@ -36,7 +36,8 @@
     "logout": "लॉग आउट",
     "language": "भाषा",
     "toggleMenu": "नेविगेशन मेनू टॉगल करें",
-    "mainNavigation": "मुख्य नेविगेशन"
+    "mainNavigation": "मुख्य नेविगेशन",
+    "auditLogs": "ऑडिट लॉग"
   },
   "auth": {
     "login": {
@@ -103,6 +104,23 @@
     "created": "अनुमति बनाई गई।",
     "updated": "अनुमति अपडेट की गई।",
     "deleted": "अनुमति हटाई गई।"
+  },
+  "auditLogs": {
+    "title": "ऑडिट लॉग",
+    "systemActor": "सिस्टम",
+    "columns": {
+      "when": "कब",
+      "actor": "कर्ता",
+      "action": "कार्रवाई",
+      "ip": "आईपी पता",
+      "metadata": "विवरण"
+    },
+    "filters": {
+      "action": "कार्रवाई",
+      "allActions": "सभी कार्रवाइयां",
+      "from": "से",
+      "to": "तक"
+    }
   },
   "errors": {
     "generic": "कुछ गलत हो गया। कृपया पुनः प्रयास करें।",

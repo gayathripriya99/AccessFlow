@@ -22,4 +22,5 @@ export const SYSTEM_PERMISSIONS: SystemPermissionDefinition[] = [
   { name: 'users.read', description: 'View users' },
   { name: 'users.update', description: 'Update users' },
   { name: 'users.delete', description: 'Delete users' },
+  { name: 'auditlogs.read', description: 'View audit logs' },
 ];

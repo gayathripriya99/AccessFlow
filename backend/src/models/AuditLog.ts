@@ -1,20 +1,27 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { toJSONOptions } from './schemaOptions';
 
-export type AuditAction =
-  | 'auth.register'
-  | 'auth.login.success'
-  | 'auth.login.failure'
-  | 'auth.refresh'
-  | 'auth.refresh.reuse_detected'
-  | 'auth.logout'
-  | 'permission.create'
-  | 'permission.update'
-  | 'permission.delete'
-  | 'role.create'
-  | 'role.update'
-  | 'role.delete'
-  | 'user.update'
-  | 'user.delete';
+/** Runtime array, not just a type, so the audit-log query API can validate
+ * an `action` filter against it (see validators/auditLog.validators.ts)
+ * without duplicating this list. */
+export const AUDIT_ACTIONS = [
+  'auth.register',
+  'auth.login.success',
+  'auth.login.failure',
+  'auth.refresh',
+  'auth.refresh.reuse_detected',
+  'auth.logout',
+  'permission.create',
+  'permission.update',
+  'permission.delete',
+  'role.create',
+  'role.update',
+  'role.delete',
+  'user.update',
+  'user.delete',
+] as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 export interface AuditLogDocument extends Document {
   _id: Types.ObjectId;
@@ -52,7 +59,15 @@ const auditLogSchema = new Schema<AuditLogDocument>(
       default: {},
     },
   },
-  { timestamps: { createdAt: true, updatedAt: false } },
+  {
+    timestamps: { createdAt: true, updatedAt: false },
+    toJSON: toJSONOptions,
+    // Mongoose's default `minimize: true` strips empty-object fields (like
+    // `metadata: {}`, the common case — most actions never pass explicit
+    // metadata) before saving, silently breaking the documented `metadata:
+    // Record<string, unknown>` contract. Disabled so it's always present.
+    minimize: false,
+  },
 );
 
 export const AuditLog = model<AuditLogDocument>('AuditLog', auditLogSchema);
