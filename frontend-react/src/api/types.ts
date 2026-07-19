@@ -94,6 +94,16 @@ export interface AuditLogEntry {
   createdAt: string;
 }
 
+export interface SimulationResult {
+  allowed: boolean;
+  permission: string;
+  roleNames: string[];
+  grantedByRoles: string[];
+  resolvedPermissions: string[];
+  /** Only present for user-mode simulations. */
+  userActive?: boolean;
+}
+
 export interface ApiErrorBody {
   error: {
     code: string;

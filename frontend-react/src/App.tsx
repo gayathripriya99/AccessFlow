@@ -10,6 +10,7 @@ import { UsersPage } from './pages/UsersPage';
 import { RolesPage } from './pages/RolesPage';
 import { PermissionsPage } from './pages/PermissionsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
+import { PermissionSimulatorPage } from './pages/PermissionSimulatorPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 function App() {
@@ -52,6 +53,14 @@ function App() {
               element={
                 <RequirePermission permission="auditlogs.read">
                   <AuditLogsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="simulator"
+              element={
+                <RequirePermission permission="simulator.run">
+                  <PermissionSimulatorPage />
                 </RequirePermission>
               }
             />

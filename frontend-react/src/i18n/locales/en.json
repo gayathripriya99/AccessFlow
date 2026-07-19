@@ -37,7 +37,8 @@
     "language": "Language",
     "toggleMenu": "Toggle navigation menu",
     "mainNavigation": "Main navigation",
-    "auditLogs": "Audit Logs"
+    "auditLogs": "Audit Logs",
+    "simulator": "Permission Simulator"
   },
   "auth": {
     "login": {
@@ -121,6 +122,28 @@
       "from": "From",
       "to": "To"
     }
+  },
+  "simulator": {
+    "title": "Permission Simulator",
+    "description": "Check whether a real user, or a hypothetical set of roles, would be granted a given permission — without actually granting anything.",
+    "modeLabel": "Check against",
+    "modeUser": "An existing user",
+    "modeRoles": "A hypothetical set of roles",
+    "selectUser": "User",
+    "selectUserPlaceholder": "Select a user…",
+    "selectUserError": "Select a user.",
+    "selectRoles": "Roles",
+    "selectRolesError": "Select at least one role.",
+    "permission": "Permission",
+    "selectPermissionPlaceholder": "Select a permission…",
+    "selectPermissionError": "Select a permission.",
+    "run": "Run simulation",
+    "allowed": "Allowed",
+    "denied": "Denied",
+    "grantedBy": "Granted by",
+    "notGrantedByAny": "Not granted by any of the selected roles.",
+    "resolvedPermissions": "Full resolved permission set",
+    "userInactiveWarning": "This user is deactivated. The roles shown are their assignments, but their effective access is currently zero."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

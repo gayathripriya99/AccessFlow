@@ -37,7 +37,8 @@
     "language": "Langue",
     "toggleMenu": "Basculer le menu de navigation",
     "mainNavigation": "Navigation principale",
-    "auditLogs": "Journaux d'audit"
+    "auditLogs": "Journaux d'audit",
+    "simulator": "Simulateur d'autorisations"
   },
   "auth": {
     "login": {
@@ -121,6 +122,28 @@
       "from": "Du",
       "to": "Au"
     }
+  },
+  "simulator": {
+    "title": "Simulateur d'autorisations",
+    "description": "Vérifiez si un utilisateur réel, ou un ensemble hypothétique de rôles, se verrait accorder une autorisation donnée — sans rien accorder réellement.",
+    "modeLabel": "Vérifier pour",
+    "modeUser": "Un utilisateur existant",
+    "modeRoles": "Un ensemble hypothétique de rôles",
+    "selectUser": "Utilisateur",
+    "selectUserPlaceholder": "Sélectionner un utilisateur…",
+    "selectUserError": "Sélectionnez un utilisateur.",
+    "selectRoles": "Rôles",
+    "selectRolesError": "Sélectionnez au moins un rôle.",
+    "permission": "Autorisation",
+    "selectPermissionPlaceholder": "Sélectionner une autorisation…",
+    "selectPermissionError": "Sélectionnez une autorisation.",
+    "run": "Lancer la simulation",
+    "allowed": "Autorisé",
+    "denied": "Refusé",
+    "grantedBy": "Accordé par",
+    "notGrantedByAny": "Non accordé par aucun des rôles sélectionnés.",
+    "resolvedPermissions": "Ensemble complet des autorisations résolues",
+    "userInactiveWarning": "Cet utilisateur est désactivé. Les rôles affichés sont ses attributions, mais son accès effectif est actuellement nul."
   },
   "errors": {
     "generic": "Une erreur s'est produite. Veuillez réessayer.",
