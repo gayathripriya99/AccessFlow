@@ -81,11 +81,11 @@ Rate limiting (`express-rate-limit`) applies to `/register` and `/login`/`/refre
 
 | Method | Path | Permission | Description |
 |---|---|---|---|
-| POST | `/` | `roles.create` | Create. Body: `name`, `description`, optional `permissions: [permissionId]` (each id must already exist — 400 on an unknown id). |
-| GET | `/?page=&limit=&search=` | `roles.read` | Paginated list, `search` on `name`. |
-| GET | `/:id` | `roles.read` | Get one, with `permissions` populated to full objects. |
-| PATCH | `/:id` | `roles.update` | Update `name`/`description`/`permissions` (full replace of the array, not a merge). |
-| DELETE | `/:id` | `roles.delete` | Delete. Cascades: removed from every `User.roles` that referenced it. |
+| POST | `/` | `roles.create` | Create. Body: `name`, `description`, optional `permissions: [permissionId]` (each id must already exist — 400 on an unknown id), optional `parentRoleId` (a role id, or `null`/omitted for no parent — 400 if it doesn't exist). |
+| GET | `/?page=&limit=&search=` | `roles.read` | Paginated list, `search` on `name`. List rows do **not** include `parentRole`/`effectivePermissions`/`ancestorNames` — detail-view only, same as `permissions` itself. |
+| GET | `/:id` | `roles.read` | Get one, with `permissions` populated to full objects, `parentRole` populated to `{id, name}` (or `null`), plus two Phase-7 computed fields: `effectivePermissions` (own + every ancestor's permission names, deduped) and `ancestorNames` (the chain from immediate parent to root). |
+| PATCH | `/:id` | `roles.update` | Update `name`/`description`/`permissions` (full replace of the array, not a merge) / `parentRoleId` (a role id to set it, `null` to explicitly clear it, or omit to leave unchanged — sending `""` is invalid). 400 if the new parent doesn't exist, or if it would create a hierarchy cycle (self-parenting or a transitive loop). |
+| DELETE | `/:id` | `roles.delete` | Delete. Cascades: removed from every `User.roles` that referenced it, and any child roles have `parentRole` nulled out (not left dangling). |
 
 ### `/api/v1/users`
 
@@ -122,14 +122,14 @@ Diagnostic-only — never mutates anything, never actually grants a permission.
 - **refreshtokens** — `userId`, `tokenHash` (SHA-256 of the signed JWT), `expiresAt` (TTL-indexed — Mongo auto-purges expired docs), `revokedAt`, `replacedByToken`.
 - **auditlogs** — `userId` (the actor, not necessarily the affected resource — `null` when unknown, e.g. a login failure against a nonexistent email), `action` (auth.\* from Phase 1, plus `permission.create/update/delete`, `role.create/update/delete`, `user.update/delete` from Phase 2), `ip`, `userAgent`, `metadata` (`{}` when nothing extra was recorded — the schema sets `minimize: false` so this is genuinely persisted, not stripped), `createdAt`. Queryable since Phase 5 via `GET /api/v1/audit-logs`.
 - **permissions** — `name` (unique, lowercase, e.g. `"users.read"`), `description`, timestamps.
-- **roles** — `name` (unique, lowercase), `description`, `permissions` (`ObjectId[]` ref `Permission`), timestamps.
+- **roles** — `name` (unique, lowercase), `description`, `permissions` (`ObjectId[]` ref `Permission`), `parentRole` (`ObjectId | null` ref `Role`, self-referencing — Phase 7 role hierarchy), timestamps.
 
 `User`, `Permission`, `Role`, and `AuditLog` schemas all share a `toJSON` transform (`src/models/schemaOptions.ts`) that exposes `id` instead of Mongo's `_id`/`__v`, including on populated sub-documents.
 
-No new collections this phase — `AuthorizationService.getPermissionNames()` resolves a user's effective permissions on every request by populating `User.roles` → `Role.permissions` and flattening the names into a set (also treats a deactivated or since-deleted user as having zero permissions, closing a gap where a still-valid access JWT could otherwise bypass DB-side deactivation).
+No new collections this phase — `AuthorizationService.getPermissionNames()` resolves a user's effective permissions on every request by populating `User.roles` → `Role.permissions`, then (since Phase 7) walking each role's `parentRole` chain too, and flattening every name into a set (also treats a deactivated or since-deleted user as having zero permissions, closing a gap where a still-valid access JWT could otherwise bypass DB-side deactivation).
 
 ## Tests
 
-`npm test` runs 47 tests across six suites (`auth`, `permissions`, `roles`, `users`, `auditLog`, `simulator`) via Jest + Supertest against an in-memory MongoDB (`mongodb-memory-server`) — no external database needed. Phase 3 adds one 403-on-missing-permission test per resource, using `tests/helpers/authenticatedUser.ts`'s `createNonAdminUser` (registers a throwaway first user to consume the admin-bootstrap slot, then returns a second, genuinely permission-less user).
+`npm test` runs 54 tests across six suites (`auth`, `permissions`, `roles`, `users`, `auditLog`, `simulator`) via Jest + Supertest against an in-memory MongoDB (`mongodb-memory-server`) — no external database needed. Phase 3 adds one 403-on-missing-permission test per resource, using `tests/helpers/authenticatedUser.ts`'s `createNonAdminUser` (registers a throwaway first user to consume the admin-bootstrap slot, then returns a second, genuinely permission-less user). Phase 7's role-hierarchy tests live inside `roles.test.ts` (a `describe('Role hierarchy (Phase 7)', ...)` block) rather than a new file, since they extend the existing `Role` resource.
 
-See [Phase-01.md](Phase-01.md) through [Phase-06.md](Phase-06.md) for end-of-phase summaries.
+See [Phase-01.md](Phase-01.md) through [Phase-07.md](Phase-07.md) for end-of-phase summaries.

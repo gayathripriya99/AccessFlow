@@ -27,12 +27,21 @@ export interface Permission {
  * for performance) and an array of full Permission objects on the detail
  * view (GET /roles/:id). Narrow with `isPopulatedPermissions` before reading
  * `.name` off an entry.
+ *
+ * `parentRole`/`effectivePermissions`/`ancestorNames` (Phase 7 role
+ * hierarchy) are populated/computed only on the detail view (`getRole`), not
+ * list rows — same populated-on-detail-only pattern as `permissions` itself.
+ * `effectivePermissions` is `permissions` unioned with every ancestor's,
+ * by name; `ancestorNames` is the chain from immediate parent to root.
  */
 export interface Role {
   id: string;
   name: string;
   description: string;
   permissions: Permission[] | string[];
+  parentRole?: { id: string; name: string } | null;
+  effectivePermissions?: string[];
+  ancestorNames?: string[];
   createdAt: string;
   updatedAt: string;
 }

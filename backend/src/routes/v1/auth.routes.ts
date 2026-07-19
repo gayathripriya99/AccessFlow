@@ -24,7 +24,7 @@ const authService = new AuthService(
   new RefreshTokenRepository(),
   new AuditLogRepository(),
   adminBootstrapService,
-  new AuthorizationService(userRepository),
+  new AuthorizationService(userRepository, new RoleRepository()),
 );
 const authController = new AuthController(authService);
 

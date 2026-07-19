@@ -132,6 +132,32 @@ describe('Permission Simulator API', () => {
     expect(res.body.data).not.toHaveProperty('userActive');
   });
 
+  it('roles mode: a permission inherited via role hierarchy (Phase 7) counts as granted', async () => {
+    const auth = await authHeader();
+    const permission = await request(app)
+      .post('/api/v1/permissions')
+      .set('Authorization', auth)
+      .send({ name: 'archive.view', description: 'x' });
+    const parent = await request(app)
+      .post('/api/v1/roles')
+      .set('Authorization', auth)
+      .send({ name: 'sim-parent', description: 'x', permissions: [permission.body.data.id] });
+    const child = await request(app)
+      .post('/api/v1/roles')
+      .set('Authorization', auth)
+      .send({ name: 'sim-child', description: 'x', permissions: [], parentRoleId: parent.body.data.id });
+
+    const res = await request(app)
+      .post('/api/v1/simulator/check')
+      .set('Authorization', auth)
+      .send({ mode: 'roles', roleIds: [child.body.data.id], permission: 'archive.view' });
+
+    expect(res.status).toBe(200);
+    // The child itself has zero direct permissions — this can only pass if
+    // the simulator walked its parent's inherited permissions too.
+    expect(res.body.data).toMatchObject({ allowed: true, grantedByRoles: ['sim-child'] });
+  });
+
   it('roles mode: 400 for an unknown role id', async () => {
     const auth = await authHeader();
     const res = await request(app)

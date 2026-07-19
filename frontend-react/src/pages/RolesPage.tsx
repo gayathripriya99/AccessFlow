@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createRole, deleteRole, listRoles, updateRole } from '../api/roles';
+import { createRole, deleteRole, getRole, listRoles, updateRole } from '../api/roles';
+import type { UpdateRoleInput } from '../api/roles';
 import { listPermissions } from '../api/permissions';
 import { isPopulatedPermissions } from '../api/types';
 import type { Role } from '../api/types';
@@ -22,9 +23,10 @@ interface FormState {
   name: string;
   description: string;
   permissions: string[];
+  parentRoleId: string;
 }
 
-const EMPTY_FORM: FormState = { name: '', description: '', permissions: [] };
+const EMPTY_FORM: FormState = { name: '', description: '', permissions: [], parentRoleId: '' };
 
 export function RolesPage() {
   const { t } = useTranslation();
@@ -51,6 +53,28 @@ export function RolesPage() {
     enabled: formOpen,
   });
 
+  // Parent-role picker needs every role regardless of this page's own
+  // search/pagination — a role hierarchy is a separate concern from the list view.
+  const { data: allRoles } = useQuery({
+    queryKey: ['roles', 'all'],
+    queryFn: () => listRoles({ page: 1, limit: 100 }),
+    enabled: formOpen,
+  });
+
+  // List rows don't carry parentRole/effectivePermissions/ancestorNames (see
+  // Role's doc comment) — fetch the detail view when editing to get them.
+  const { data: editingDetail } = useQuery({
+    queryKey: ['roles', 'detail', editingId],
+    queryFn: () => getRole(editingId!),
+    enabled: editingId !== null,
+  });
+
+  useEffect(() => {
+    if (editingDetail) {
+      setForm((prev) => ({ ...prev, parentRoleId: editingDetail.parentRole?.id ?? '' }));
+    }
+  }, [editingDetail]);
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['roles'] });
 
   const createMutation = useMutation({
@@ -63,7 +87,7 @@ export function RolesPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, input }: { id: string; input: FormState }) => updateRole(id, input),
+    mutationFn: ({ id, input }: { id: string; input: UpdateRoleInput }) => updateRole(id, input),
     onSuccess: () => {
       invalidate();
       closeForm();
@@ -88,7 +112,9 @@ export function RolesPage() {
     const permissionIds = isPopulatedPermissions(role.permissions)
       ? role.permissions.map((permission) => permission.id)
       : role.permissions;
-    setForm({ name: role.name, description: role.description, permissions: permissionIds });
+    // parentRoleId starts empty and is filled in by the editingDetail effect
+    // once the detail fetch resolves (list rows don't carry it).
+    setForm({ name: role.name, description: role.description, permissions: permissionIds, parentRoleId: '' });
     setFormError(null);
     setFieldErrors(null);
     setCreating(false);
@@ -120,10 +146,13 @@ export function RolesPage() {
     if (errors) {
       return;
     }
+    // Empty-string "no parent selected" must become null, not '' — the
+    // backend's parentRoleId is either a real ObjectId string or null.
+    const payload = { ...form, parentRoleId: form.parentRoleId || null };
     if (editingId) {
-      updateMutation.mutate({ id: editingId, input: form });
+      updateMutation.mutate({ id: editingId, input: payload });
     } else {
-      createMutation.mutate(form);
+      createMutation.mutate(payload);
     }
   }
 
@@ -198,6 +227,24 @@ export function RolesPage() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             error={fieldErrors?.description ? t('common.fieldRequired') : undefined}
           />
+          <FormField label={t('roles.parentRole')} id="role-parent">
+            <select
+              id="role-parent"
+              value={form.parentRoleId}
+              onChange={(e) => setForm({ ...form, parentRoleId: e.target.value })}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+            >
+              <option value="">{t('roles.noParent')}</option>
+              {allRoles?.data
+                .filter((role) => role.id !== editingId)
+                .map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+            </select>
+          </FormField>
+
           <fieldset className="flex flex-col gap-2">
             <legend className="text-sm font-medium text-gray-900">{t('roles.permissions')}</legend>
             <div className="grid max-h-48 grid-cols-2 gap-2 overflow-y-auto rounded-md border border-gray-200 p-3">
@@ -213,6 +260,25 @@ export function RolesPage() {
               ))}
             </div>
           </fieldset>
+
+          {editingDetail && editingDetail.ancestorNames && editingDetail.ancestorNames.length > 0 && (
+            <p className="text-sm text-gray-600">
+              {t('roles.inheritsFrom')} {editingDetail.ancestorNames.join(' ← ')}
+            </p>
+          )}
+          {editingDetail?.effectivePermissions && (
+            <div>
+              <h3 className="mb-1 text-sm font-medium text-gray-900">{t('roles.effectivePermissions')}</h3>
+              <ul className="flex flex-wrap gap-2">
+                {editingDetail.effectivePermissions.map((name) => (
+                  <li key={name} className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {formError && (
             <p className="text-sm text-red-600" role="alert">
               {formError}

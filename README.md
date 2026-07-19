@@ -25,7 +25,7 @@ AccessFlow/
 | 4 | Protected UI (React) | Complete — see [backend/Phase-04.md](backend/Phase-04.md) |
 | 5 | Audit Logs | Complete — see [backend/Phase-05.md](backend/Phase-05.md) |
 | 6 | Permission Simulator | Complete — see [backend/Phase-06.md](backend/Phase-06.md) |
-| 7 | Advanced RBAC | Not started |
+| 7 | Advanced RBAC (Role Hierarchy) | Complete — see [backend/Phase-07.md](backend/Phase-07.md) |
 | 8 | ABAC + Multi-tenant | Not started |
 
 ## Getting started

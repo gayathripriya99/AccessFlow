@@ -15,6 +15,7 @@ export const createRoleSchema = z.object({
     name: nameSchema,
     description: z.string().trim().min(1).max(300),
     permissions: z.array(objectIdSchema).optional().default([]),
+    parentRoleId: objectIdSchema.nullable().optional(),
   }),
 });
 
@@ -24,6 +25,7 @@ export const updateRoleSchema = z.object({
       name: nameSchema.optional(),
       description: z.string().trim().min(1).max(300).optional(),
       permissions: z.array(objectIdSchema).optional(),
+      parentRoleId: objectIdSchema.nullable().optional(),
     })
     .refine((body) => Object.keys(body).length > 0, 'At least one field must be provided'),
 });

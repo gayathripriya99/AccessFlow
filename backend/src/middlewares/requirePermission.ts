@@ -1,9 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { AuthorizationService } from '../services/AuthorizationService';
 import { UserRepository } from '../repositories/UserRepository';
+import { RoleRepository } from '../repositories/RoleRepository';
 import { ApiError } from '../utils/ApiError';
 
-const authorizationService = new AuthorizationService(new UserRepository());
+const authorizationService = new AuthorizationService(new UserRepository(), new RoleRepository());
 
 /**
  * Guards a route behind a specific permission name, resolved from the

@@ -6,6 +6,7 @@ export interface CreateRoleInput {
   name: string;
   description: string;
   permissions?: string[];
+  parentRoleId?: string | null;
 }
 
 export type UpdateRoleInput = Partial<CreateRoleInput>;
