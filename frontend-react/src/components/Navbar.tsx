@@ -18,7 +18,16 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
-  // Close the drawer on navigation — otherwise it stays open over the new page after tapping a link.
+  // Belt-and-suspenders close: the pathname effect below handles browser
+  // back/forward and any navigation that lands on a different route, but a
+  // tap on the link for the page already showing (plausible on mobile —
+  // e.g. opening the drawer while already on Dashboard) doesn't change
+  // location.pathname, so that effect alone never fires. Each link's onClick
+  // closes unconditionally, regardless of whether the destination differs.
+  function closeDrawer() {
+    setMobileOpen(false);
+  }
+
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
@@ -62,7 +71,7 @@ export function Navbar() {
       {mobileOpen && (
         <div id="mobile-nav" className="flex flex-col gap-2 border-t border-gray-200 px-4 py-3 xl:hidden">
           {visibleItems.map((item) => (
-            <NavLink key={item.key} to={item.path} className={linkClasses}>
+            <NavLink key={item.key} to={item.path} className={linkClasses} onClick={closeDrawer}>
               {t(item.labelKey)}
             </NavLink>
           ))}
