@@ -81,7 +81,7 @@ describe('Auth API', () => {
       // bootstrap (Phase 3) grants them the full baseline permission set.
       expect(res.body.data.roles).toEqual(['admin']);
       expect(res.body.data.permissions).toEqual(expect.arrayContaining(['users.read', 'roles.create']));
-      expect(res.body.data.permissions).toHaveLength(13);
+      expect(res.body.data.permissions).toHaveLength(17);
     });
   });
 

@@ -38,7 +38,8 @@
     "toggleMenu": "Basculer le menu de navigation",
     "mainNavigation": "Navigation principale",
     "auditLogs": "Journaux d'audit",
-    "simulator": "Simulateur d'autorisations"
+    "simulator": "Simulateur d'autorisations",
+    "policies": "Politiques"
   },
   "auth": {
     "login": {
@@ -148,6 +149,29 @@
     "notGrantedByAny": "Non accordé par aucun des rôles sélectionnés.",
     "resolvedPermissions": "Ensemble complet des autorisations résolues",
     "userInactiveWarning": "Cet utilisateur est désactivé. Les rôles affichés sont ses attributions, mais son accès effectif est actuellement nul."
+  },
+  "policies": {
+    "title": "Politiques",
+    "description": "Règles d'accès basées sur les attributs, en complément des rôles et autorisations — par ex. \"tout utilisateur peut consulter son propre profil\", ou \"personne ne peut supprimer son propre compte\". Une politique allow accorde l'accès même sans l'autorisation correspondante ; une politique deny l'emporte toujours sur un allow.",
+    "createPolicy": "Créer une politique",
+    "editPolicy": "Modifier la politique",
+    "searchPlaceholder": "Rechercher des politiques…",
+    "resource": "Ressource",
+    "action": "Action",
+    "effect": "Effet",
+    "allow": "Autoriser",
+    "deny": "Refuser",
+    "conditions": "Conditions",
+    "conditionsHint": "Toutes les conditions doivent être remplies pour que cette politique s'applique. Comparez un attribut (ex. resource.id) à un autre attribut (ex. subject.id) ou à une valeur littérale.",
+    "conditionsRequired": "Chaque condition nécessite un attribut et une valeur à comparer.",
+    "attribute": "Attribut",
+    "operator": "Opérateur",
+    "compareTo": "Comparer à",
+    "addCondition": "Ajouter une condition",
+    "deleteConfirm": "Supprimer cette politique ? Les décisions d'accès qui en dépendent reviendront aux vérifications de rôle/autorisation habituelles.",
+    "created": "Politique créée.",
+    "updated": "Politique mise à jour.",
+    "deleted": "Politique supprimée."
   },
   "errors": {
     "generic": "Une erreur s'est produite. Veuillez réessayer.",

@@ -19,6 +19,9 @@ export const AUDIT_ACTIONS = [
   'role.delete',
   'user.update',
   'user.delete',
+  'policy.create',
+  'policy.update',
+  'policy.delete',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

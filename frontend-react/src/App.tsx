@@ -11,6 +11,7 @@ import { RolesPage } from './pages/RolesPage';
 import { PermissionsPage } from './pages/PermissionsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { PermissionSimulatorPage } from './pages/PermissionSimulatorPage';
+import { PoliciesPage } from './pages/PoliciesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 function App() {
@@ -61,6 +62,14 @@ function App() {
               element={
                 <RequirePermission permission="simulator.run">
                   <PermissionSimulatorPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="policies"
+              element={
+                <RequirePermission permission="policies.read">
+                  <PoliciesPage />
                 </RequirePermission>
               }
             />

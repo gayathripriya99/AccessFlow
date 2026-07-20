@@ -2,7 +2,9 @@ import { Types } from 'mongoose';
 import { UserRepository } from '../repositories/UserRepository';
 import { RoleRepository } from '../repositories/RoleRepository';
 import { PermissionRepository } from '../repositories/PermissionRepository';
+import { PolicyRepository } from '../repositories/PolicyRepository';
 import { ADMIN_ROLE_NAME, SYSTEM_PERMISSIONS } from '../constants/systemPermissions';
+import { SYSTEM_POLICIES } from '../constants/systemPolicies';
 import { UserDocument } from '../models/User';
 import { logger } from '../config/logger';
 
@@ -11,6 +13,7 @@ export class AdminBootstrapService {
     private readonly userRepository: UserRepository,
     private readonly roleRepository: RoleRepository,
     private readonly permissionRepository: PermissionRepository,
+    private readonly policyRepository: PolicyRepository,
   ) {}
 
   /**
@@ -42,6 +45,13 @@ export class AdminBootstrapService {
       }));
 
     await this.userRepository.updateById(user._id, { roles: [adminRole._id] });
+
+    for (const definition of SYSTEM_POLICIES) {
+      const existing = await this.policyRepository.findByName(definition.name);
+      if (!existing) {
+        await this.policyRepository.create(definition);
+      }
+    }
 
     logger.info({ userId: user._id.toString(), email: user.email }, 'First user bootstrapped as admin');
   }

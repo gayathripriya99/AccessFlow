@@ -87,6 +87,9 @@ export const AUDIT_ACTIONS = [
   'role.delete',
   'user.update',
   'user.delete',
+  'policy.create',
+  'policy.update',
+  'policy.delete',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -111,6 +114,30 @@ export interface SimulationResult {
   resolvedPermissions: string[];
   /** Only present for user-mode simulations. */
   userActive?: boolean;
+}
+
+export type PolicyEffect = 'allow' | 'deny';
+export type PolicyOperator = 'equals' | 'notEquals';
+export type PolicyResource = 'user';
+export type PolicyAction = 'read' | 'update' | 'delete';
+
+export interface PolicyCondition {
+  attribute: string;
+  operator: PolicyOperator;
+  compareTo: string;
+}
+
+export interface Policy {
+  id: string;
+  name: string;
+  description: string;
+  resource: PolicyResource;
+  action: PolicyAction;
+  effect: PolicyEffect;
+  conditions: PolicyCondition[];
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApiErrorBody {

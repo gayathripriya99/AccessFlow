@@ -2,6 +2,7 @@ import { ListUsersFilter, UpdateUserInput, UserRepository } from '../repositorie
 import { RoleRepository } from '../repositories/RoleRepository';
 import { RefreshTokenRepository } from '../repositories/RefreshTokenRepository';
 import { AuditLogRepository } from '../repositories/AuditLogRepository';
+import { AuthorizationService } from './AuthorizationService';
 import { ApiError } from '../utils/ApiError';
 import { PaginationMeta, PaginationParams, buildPaginationMeta } from '../utils/pagination';
 import { toObjectIdArray } from '../utils/objectId';
@@ -15,6 +16,7 @@ export class UserService {
     private readonly roleRepository: RoleRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly auditLogRepository: AuditLogRepository,
+    private readonly authorizationService: AuthorizationService,
   ) {}
 
   async list(
@@ -34,6 +36,18 @@ export class UserService {
   }
 
   async update(id: string, input: UpdateUserBody, context: RequestContext): Promise<UserDocument> {
+    // Phase 8: a caller reaching this via the ABAC self-service-update policy
+    // (not a real users.update grant) may only ever touch their own `name` —
+    // otherwise "update your own profile" would double as "grant yourself
+    // any role you like," which defeats the entire permission system. Real
+    // admins (who do hold users.update) are unaffected by this check.
+    if (context.actorId === id && (input.roles !== undefined || input.isActive !== undefined)) {
+      const actorPermissions = await this.authorizationService.getPermissionNames(context.actorId);
+      if (!actorPermissions.has('users.update')) {
+        throw ApiError.forbidden('Self-service profile updates may only change your name, not roles or active status');
+      }
+    }
+
     if (input.roles) {
       await this.assertRolesExist(input.roles);
     }

@@ -24,4 +24,8 @@ export const SYSTEM_PERMISSIONS: SystemPermissionDefinition[] = [
   { name: 'users.delete', description: 'Delete users' },
   { name: 'auditlogs.read', description: 'View audit logs' },
   { name: 'simulator.run', description: 'Run the permission simulator' },
+  { name: 'policies.create', description: 'Create ABAC policies' },
+  { name: 'policies.read', description: 'View ABAC policies' },
+  { name: 'policies.update', description: 'Update ABAC policies' },
+  { name: 'policies.delete', description: 'Delete ABAC policies' },
 ];

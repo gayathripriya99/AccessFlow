@@ -13,4 +13,5 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'permissions', path: '/permissions', labelKey: 'nav.permissions', permission: 'permissions.read' },
   { key: 'auditLogs', path: '/audit-logs', labelKey: 'nav.auditLogs', permission: 'auditlogs.read' },
   { key: 'simulator', path: '/simulator', labelKey: 'nav.simulator', permission: 'simulator.run' },
+  { key: 'policies', path: '/policies', labelKey: 'nav.policies', permission: 'policies.read' },
 ];

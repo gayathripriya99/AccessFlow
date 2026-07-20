@@ -94,16 +94,20 @@ describe('Users API', () => {
   });
 
   it('rejects a non-admin authenticated user with 403', async () => {
-    const { accessToken, userId } = await createNonAdminUser(app);
+    const { accessToken } = await createNonAdminUser(app);
     const auth = `Bearer ${accessToken}`;
 
     const list = await request(app).get('/api/v1/users').set('Authorization', auth);
     expect(list.status).toBe(403);
 
+    // Updating *someone else* — as opposed to self-service, which Phase 8's
+    // ABAC layer deliberately allows for a name-only change (see
+    // policies.test.ts) — must still require real users.update.
+    const { userId: otherUserId } = await createAuthenticatedUser(app);
     const update = await request(app)
-      .patch(`/api/v1/users/${userId}`)
+      .patch(`/api/v1/users/${otherUserId}`)
       .set('Authorization', auth)
-      .send({ name: 'Self Rename Attempt' });
+      .send({ name: 'Rename Someone Else Attempt' });
     expect(update.status).toBe(403);
   });
 });

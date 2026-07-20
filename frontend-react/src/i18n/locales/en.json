@@ -38,7 +38,8 @@
     "toggleMenu": "Toggle navigation menu",
     "mainNavigation": "Main navigation",
     "auditLogs": "Audit Logs",
-    "simulator": "Permission Simulator"
+    "simulator": "Permission Simulator",
+    "policies": "Policies"
   },
   "auth": {
     "login": {
@@ -148,6 +149,29 @@
     "notGrantedByAny": "Not granted by any of the selected roles.",
     "resolvedPermissions": "Full resolved permission set",
     "userInactiveWarning": "This user is deactivated. The roles shown are their assignments, but their effective access is currently zero."
+  },
+  "policies": {
+    "title": "Policies",
+    "description": "Attribute-based access rules that sit alongside roles and permissions — e.g. \"any user may view their own profile,\" or \"no one may delete their own account.\" An allow policy grants access even without the matching permission; a deny policy always wins over any allow.",
+    "createPolicy": "Create policy",
+    "editPolicy": "Edit policy",
+    "searchPlaceholder": "Search policies…",
+    "resource": "Resource",
+    "action": "Action",
+    "effect": "Effect",
+    "allow": "Allow",
+    "deny": "Deny",
+    "conditions": "Conditions",
+    "conditionsHint": "All conditions must hold for this policy to apply. Compare an attribute (e.g. resource.id) to another attribute (e.g. subject.id) or a literal value.",
+    "conditionsRequired": "Every condition needs an attribute and a value to compare it to.",
+    "attribute": "Attribute",
+    "operator": "Operator",
+    "compareTo": "Compare to",
+    "addCondition": "Add condition",
+    "deleteConfirm": "Delete this policy? Access decisions relying on it will fall back to ordinary role/permission checks.",
+    "created": "Policy created.",
+    "updated": "Policy updated.",
+    "deleted": "Policy deleted."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

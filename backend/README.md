@@ -42,13 +42,13 @@ routes → controllers → services → repositories → MongoDB
 - **repositories** (`src/repositories`) — the only layer that talks to Mongoose models.
 - **models** (`src/models`) — Mongoose schemas.
 
-Cross-cutting: `src/config` (env, DB connection, logger), `src/middlewares` (error handling, validation, rate limiting, `requireAuth` identity guard, `requirePermission` permission guard), `src/utils` (JWT helpers, `ApiError`, cookie helpers), `src/validators` (Zod request schemas), `src/constants` (the baseline permission set used by admin bootstrap).
+Cross-cutting: `src/config` (env, DB connection, logger), `src/middlewares` (error handling, validation, rate limiting, `requireAuth` identity guard, `requirePermission` permission guard, `requireAccess` ABAC-then-RBAC guard), `src/utils` (JWT helpers, `ApiError`, cookie helpers), `src/validators` (Zod request schemas), `src/constants` (the baseline permission/policy sets used by admin bootstrap).
 
 ## Authorization
 
-Every endpoint below except `/auth/*` and `/health` requires `Authorization: Bearer <accessToken>` **and** the specific permission named in its table row — resolved from the caller's roles, never a hardcoded role-name check. Missing the permission returns `403`.
+Every endpoint below except `/auth/*` and `/health` requires `Authorization: Bearer <accessToken>` **and** the specific permission named in its table row — resolved from the caller's roles, never a hardcoded role-name check — **or** a matching ABAC `allow` policy where noted (Phase 8; a matching `deny` policy blocks the request regardless of permissions). Missing both returns `403`.
 
-**Bootstrap:** the very first user ever registered (in an empty database) automatically gets an `admin` role bundling a baseline set of 13 permissions (all CRUD actions on permissions/roles/users, plus `auditlogs.read` and `simulator.run` — see `src/constants/systemPermissions.ts`), so a fresh deployment isn't locked out of managing its own RBAC data. Every subsequent registration gets zero roles/permissions and must be granted access by an existing admin via `PATCH /users/:id`.
+**Bootstrap:** the very first user ever registered (in an empty database) automatically gets an `admin` role bundling a baseline set of 17 permissions (all CRUD actions on permissions/roles/users/policies, plus `auditlogs.read` and `simulator.run` — see `src/constants/systemPermissions.ts`), so a fresh deployment isn't locked out of managing its own RBAC data. It also seeds 3 baseline ABAC policies (`src/constants/systemPolicies.ts`) — see the `/api/v1/policies` section below. Every subsequent registration gets zero roles/permissions and must be granted access by an existing admin via `PATCH /users/:id`.
 
 ## API summary
 
@@ -89,14 +89,14 @@ Rate limiting (`express-rate-limit`) applies to `/register` and `/login`/`/refre
 
 ### `/api/v1/users`
 
-No `POST /` — user creation stays at `/auth/register` (not duplicated here, and not permission-gated).
+No `POST /` — user creation stays at `/auth/register` (not duplicated here, and not permission-gated). The three single-resource routes below are gated by `requireAccess` (Phase 8), not `requirePermission` directly — ABAC policies are checked first, the listed permission is the *fallback* used only when no policy matches. `GET /` (list) has no single resource id to evaluate a policy against, so it stays permission-gated only.
 
-| Method | Path | Permission | Description |
+| Method | Path | Permission (fallback) | Description |
 |---|---|---|---|
 | GET | `/?page=&limit=&search=&isActive=` | `users.read` | Paginated list, `search` matches `email` or `name`, `isActive` is `true`/`false`. Roles are **not** populated in list results (ids only) for performance. |
-| GET | `/:id` | `users.read` | Get one, with `roles` populated (and each role's `permissions` populated in turn). |
-| PATCH | `/:id` | `users.update` | Update `name`/`isActive`/`roles` (full replace of the roles array; each id must exist — 400 on an unknown id). This is how an admin grants access to other users. |
-| DELETE | `/:id` | `users.delete` | Hard-deletes the user and revokes all of their refresh tokens (any active session is immediately logged out). |
+| GET | `/:id` | `users.read` | Get one, with `roles` populated (and each role's `permissions` populated in turn). The seeded `self-service-read` policy lets any caller fetch **their own** record here even without `users.read`. |
+| PATCH | `/:id` | `users.update` | Update `name`/`isActive`/`roles` (full replace of the roles array; each id must exist — 400 on an unknown id). The seeded `self-service-update` policy lets any caller update their own record without `users.update` — but `UserService` restricts that specific path to the `name` field only; attempting `roles`/`isActive` without real `users.update` is 403, even on your own record. This is how an admin grants access to *other* users. |
+| DELETE | `/:id` | `users.delete` | Hard-deletes the user and revokes all of their refresh tokens (any active session is immediately logged out). The seeded `deny-self-delete` policy blocks a caller from deleting **their own** account here even if they hold `users.delete` — an explicit deny always wins over an RBAC grant. |
 
 All mutating actions on these three resources write an audit log entry (see Database section) recording which authenticated user performed the change.
 
@@ -114,7 +114,21 @@ Diagnostic-only — never mutates anything, never actually grants a permission.
 
 | Method | Path | Permission | Description |
 |---|---|---|---|
-| POST | `/check` | `simulator.run` | Body is a discriminated union on `mode`: `{ mode: "user", userId, permission }` (404 if the user doesn't exist) or `{ mode: "roles", roleIds: [id, ...], permission }` (400 on any unknown role id, min 1 / max 20 ids). Returns `{ allowed, permission, roleNames, grantedByRoles, resolvedPermissions, userActive? }` — `userActive` is present (and forces `allowed: false` when `false`) only for `mode: "user"`; a hypothetical role selection has no user to be active or inactive. `permission` doesn't need to be a real `Permission` document — an invented name simply won't be in anyone's resolved set. |
+| POST | `/check` | `simulator.run` | Body is a discriminated union on `mode`: `{ mode: "user", userId, permission }` (404 if the user doesn't exist) or `{ mode: "roles", roleIds: [id, ...], permission }` (400 on any unknown role id, min 1 / max 20 ids). Returns `{ allowed, permission, roleNames, grantedByRoles, resolvedPermissions, userActive? }` — `userActive` is present (and forces `allowed: false` when `false`) only for `mode: "user"`; a hypothetical role selection has no user to be active or inactive. `permission` doesn't need to be a real `Permission` document — an invented name simply won't be in anyone's resolved set. **Does not evaluate ABAC policies** — Phase 8 explicitly didn't extend this to know about `resource.id`-scoped decisions; it's RBAC-only. |
+
+### `/api/v1/policies`
+
+ABAC (Phase 8) configuration — ordinary CRUD, not diagnostic-only like `/simulator`. `resource` is currently restricted to `"user"` and `action` to `"read"`/`"update"`/`"delete"` (the only ABAC-checked route group so far — see `/api/v1/users` above); widening either enum doesn't need a migration, just a validator change plus a new `requireAccess` call site.
+
+| Method | Path | Permission | Description |
+|---|---|---|---|
+| POST | `/` | `policies.create` | Create. Body: `name`, `description`, `resource`, `action`, `effect` (`"allow"`/`"deny"`), `conditions` (1–10 `{attribute, operator, compareTo}` objects, ANDed), optional `enabled` (default `true`). 409 on duplicate name. |
+| GET | `/?page=&limit=&search=` | `policies.read` | Paginated list, `search` on `name`. |
+| GET | `/:id` | `policies.read` | Get one. |
+| PATCH | `/:id` | `policies.update` | Update any field; `conditions` is a full replace, not a merge. |
+| DELETE | `/:id` | `policies.delete` | Delete. Any `requireAccess` call relying on this policy immediately falls back to its RBAC permission — no cascade needed since nothing else references a Policy by id. |
+
+Each `condition`'s `attribute`/`compareTo` is a dot-path (`subject.id`, `resource.id`) or, for `compareTo`, a literal string — see `AbacService`'s doc comment for the exact resolution rules. Policy CRUD itself writes `policy.create`/`update`/`delete` audit log entries, same as Permissions/Roles/Users.
 
 ## Database
 
@@ -123,13 +137,14 @@ Diagnostic-only — never mutates anything, never actually grants a permission.
 - **auditlogs** — `userId` (the actor, not necessarily the affected resource — `null` when unknown, e.g. a login failure against a nonexistent email), `action` (auth.\* from Phase 1, plus `permission.create/update/delete`, `role.create/update/delete`, `user.update/delete` from Phase 2), `ip`, `userAgent`, `metadata` (`{}` when nothing extra was recorded — the schema sets `minimize: false` so this is genuinely persisted, not stripped), `createdAt`. Queryable since Phase 5 via `GET /api/v1/audit-logs`.
 - **permissions** — `name` (unique, lowercase, e.g. `"users.read"`), `description`, timestamps.
 - **roles** — `name` (unique, lowercase), `description`, `permissions` (`ObjectId[]` ref `Permission`), `parentRole` (`ObjectId | null` ref `Role`, self-referencing — Phase 7 role hierarchy), timestamps.
+- **policies** — `name` (unique, lowercase), `description`, `resource`, `action`, `effect` (`"allow"`/`"deny"`), `conditions` (embedded array, not a separate collection: `[{attribute, operator, compareTo}]`), `enabled`, timestamps. Phase 8.
 
-`User`, `Permission`, `Role`, and `AuditLog` schemas all share a `toJSON` transform (`src/models/schemaOptions.ts`) that exposes `id` instead of Mongo's `_id`/`__v`, including on populated sub-documents.
+`User`, `Permission`, `Role`, `AuditLog`, and `Policy` schemas all share a `toJSON` transform (`src/models/schemaOptions.ts`) that exposes `id` instead of Mongo's `_id`/`__v`, including on populated sub-documents.
 
-No new collections this phase — `AuthorizationService.getPermissionNames()` resolves a user's effective permissions on every request by populating `User.roles` → `Role.permissions`, then (since Phase 7) walking each role's `parentRole` chain too, and flattening every name into a set (also treats a deactivated or since-deleted user as having zero permissions, closing a gap where a still-valid access JWT could otherwise bypass DB-side deactivation).
+`AuthorizationService.getPermissionNames()` resolves a user's effective permissions on every request by populating `User.roles` → `Role.permissions`, then (since Phase 7) walking each role's `parentRole` chain too, and flattening every name into a set (also treats a deactivated or since-deleted user as having zero permissions, closing a gap where a still-valid access JWT could otherwise bypass DB-side deactivation). Since Phase 8, `requireAccess` (used instead of `requirePermission` on the three single-resource Users routes) consults `AbacService`/`PolicyRepository` *before* falling back to this same permission resolution.
 
 ## Tests
 
-`npm test` runs 54 tests across six suites (`auth`, `permissions`, `roles`, `users`, `auditLog`, `simulator`) via Jest + Supertest against an in-memory MongoDB (`mongodb-memory-server`) — no external database needed. Phase 3 adds one 403-on-missing-permission test per resource, using `tests/helpers/authenticatedUser.ts`'s `createNonAdminUser` (registers a throwaway first user to consume the admin-bootstrap slot, then returns a second, genuinely permission-less user). Phase 7's role-hierarchy tests live inside `roles.test.ts` (a `describe('Role hierarchy (Phase 7)', ...)` block) rather than a new file, since they extend the existing `Role` resource.
+`npm test` runs 63 tests across seven suites (`auth`, `permissions`, `roles`, `users`, `auditLog`, `simulator`, `policies`) via Jest + Supertest against an in-memory MongoDB (`mongodb-memory-server`) — no external database needed. Phase 3 adds one 403-on-missing-permission test per resource, using `tests/helpers/authenticatedUser.ts`'s `createNonAdminUser` (registers a throwaway first user to consume the admin-bootstrap slot, then returns a second, genuinely permission-less user). Phase 7's role-hierarchy tests live inside `roles.test.ts` (a `describe('Role hierarchy (Phase 7)', ...)` block) rather than a new file, since they extend the existing `Role` resource; Phase 8's ABAC integration tests (self-service read/update/delete, the field-restriction guard, live enabled/delete effects) live in `policies.test.ts` alongside the ordinary Policy-CRUD tests.
 
-See [Phase-01.md](Phase-01.md) through [Phase-07.md](Phase-07.md) for end-of-phase summaries.
+See [Phase-01.md](Phase-01.md) through [Phase-08.md](Phase-08.md) for end-of-phase summaries.

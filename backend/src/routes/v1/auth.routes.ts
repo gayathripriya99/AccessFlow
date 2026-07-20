@@ -8,6 +8,7 @@ import { RefreshTokenRepository } from '../../repositories/RefreshTokenRepositor
 import { AuditLogRepository } from '../../repositories/AuditLogRepository';
 import { RoleRepository } from '../../repositories/RoleRepository';
 import { PermissionRepository } from '../../repositories/PermissionRepository';
+import { PolicyRepository } from '../../repositories/PolicyRepository';
 import { validateRequest } from '../../middlewares/validateRequest';
 import { authRateLimiter } from '../../middlewares/rateLimiter';
 import { requireAuth } from '../../middlewares/requireAuth';
@@ -18,6 +19,7 @@ const adminBootstrapService = new AdminBootstrapService(
   userRepository,
   new RoleRepository(),
   new PermissionRepository(),
+  new PolicyRepository(),
 );
 const authService = new AuthService(
   userRepository,
