@@ -31,4 +31,8 @@ AccessFlow/
 
 ## Getting started
 
-See [backend/README.md](backend/README.md) for backend setup and API details.
+See [HOW_TO_RUN.md](HOW_TO_RUN.md) for step-by-step local setup and a manual verification checklist, or [backend/README.md](backend/README.md) for backend setup and full API details.
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for deploying the backend to Render, the frontend to Vercel, and the database to MongoDB Atlas.
