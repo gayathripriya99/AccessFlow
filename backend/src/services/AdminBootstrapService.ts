@@ -18,41 +18,45 @@ export class AdminBootstrapService {
 
   /**
    * Called right after a user is created. If this user turns out to be the
-   * only one in the system, grants them a fully-permissioned `admin` role so
-   * an empty deployment isn't locked out of managing its own permissions/roles.
-   * Idempotent: safe to call even if the baseline permissions/role already exist.
+   * only one in their tenant, grants them a fully-permissioned `admin` role
+   * so a brand-new organization isn't locked out of managing its own
+   * permissions/roles. Idempotent: safe to call even if the baseline
+   * permissions/role already exist for this tenant.
    */
-  async bootstrapFirstUserAsAdmin(user: UserDocument): Promise<void> {
-    const totalUsers = await this.userRepository.count();
+  async bootstrapFirstUserAsAdmin(tenantId: Types.ObjectId, user: UserDocument): Promise<void> {
+    const totalUsers = await this.userRepository.count(tenantId);
     if (totalUsers !== 1) {
       return;
     }
 
     const permissionIds: Types.ObjectId[] = [];
     for (const definition of SYSTEM_PERMISSIONS) {
-      const existing = await this.permissionRepository.findByName(definition.name);
-      const permission = existing ?? (await this.permissionRepository.create(definition));
+      const existing = await this.permissionRepository.findByName(tenantId, definition.name);
+      const permission = existing ?? (await this.permissionRepository.create(tenantId, definition));
       permissionIds.push(permission._id);
     }
 
-    const existingRole = await this.roleRepository.findByName(ADMIN_ROLE_NAME);
+    const existingRole = await this.roleRepository.findByName(tenantId, ADMIN_ROLE_NAME);
     const adminRole =
       existingRole ??
-      (await this.roleRepository.create({
+      (await this.roleRepository.create(tenantId, {
         name: ADMIN_ROLE_NAME,
         description: 'Full access to manage users, roles, and permissions',
         permissions: permissionIds,
       }));
 
-    await this.userRepository.updateById(user._id, { roles: [adminRole._id] });
+    await this.userRepository.updateById(tenantId, user._id, { roles: [adminRole._id] });
 
     for (const definition of SYSTEM_POLICIES) {
-      const existing = await this.policyRepository.findByName(definition.name);
+      const existing = await this.policyRepository.findByName(tenantId, definition.name);
       if (!existing) {
-        await this.policyRepository.create(definition);
+        await this.policyRepository.create(tenantId, definition);
       }
     }
 
-    logger.info({ userId: user._id.toString(), email: user.email }, 'First user bootstrapped as admin');
+    logger.info(
+      { userId: user._id.toString(), email: user.email, tenantId: tenantId.toString() },
+      'First user in tenant bootstrapped as admin',
+    );
   }
 }

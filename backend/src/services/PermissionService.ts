@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import {
   CreatePermissionInput,
   ListPermissionsFilter,
@@ -16,14 +17,18 @@ export class PermissionService {
     private readonly auditLogRepository: AuditLogRepository,
   ) {}
 
-  async create(input: CreatePermissionInput, context: RequestContext): Promise<PermissionDocument> {
-    const existing = await this.permissionRepository.findByName(input.name);
+  async create(
+    tenantId: string | Types.ObjectId,
+    input: CreatePermissionInput,
+    context: RequestContext,
+  ): Promise<PermissionDocument> {
+    const existing = await this.permissionRepository.findByName(tenantId, input.name);
     if (existing) {
       throw ApiError.conflict('A permission with this name already exists');
     }
 
-    const permission = await this.permissionRepository.create(input);
-    await this.auditLogRepository.record({
+    const permission = await this.permissionRepository.create(tenantId, input);
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'permission.create',
       ip: context.ip,
@@ -34,35 +39,41 @@ export class PermissionService {
   }
 
   async list(
+    tenantId: string | Types.ObjectId,
     filter: ListPermissionsFilter,
     pagination: PaginationParams,
   ): Promise<{ items: PermissionDocument[]; meta: PaginationMeta }> {
-    const { items, total } = await this.permissionRepository.list(filter, pagination);
+    const { items, total } = await this.permissionRepository.list(tenantId, filter, pagination);
     return { items, meta: buildPaginationMeta(pagination, total) };
   }
 
-  async getById(id: string): Promise<PermissionDocument> {
-    const permission = await this.permissionRepository.findById(id);
+  async getById(tenantId: string | Types.ObjectId, id: string): Promise<PermissionDocument> {
+    const permission = await this.permissionRepository.findById(tenantId, id);
     if (!permission) {
       throw ApiError.notFound('Permission not found');
     }
     return permission;
   }
 
-  async update(id: string, input: UpdatePermissionInput, context: RequestContext): Promise<PermissionDocument> {
+  async update(
+    tenantId: string | Types.ObjectId,
+    id: string,
+    input: UpdatePermissionInput,
+    context: RequestContext,
+  ): Promise<PermissionDocument> {
     if (input.name) {
-      const existing = await this.permissionRepository.findByName(input.name);
+      const existing = await this.permissionRepository.findByName(tenantId, input.name);
       if (existing && existing._id.toString() !== id) {
         throw ApiError.conflict('A permission with this name already exists');
       }
     }
 
-    const updated = await this.permissionRepository.updateById(id, input);
+    const updated = await this.permissionRepository.updateById(tenantId, id, input);
     if (!updated) {
       throw ApiError.notFound('Permission not found');
     }
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'permission.update',
       ip: context.ip,
@@ -72,13 +83,13 @@ export class PermissionService {
     return updated;
   }
 
-  async delete(id: string, context: RequestContext): Promise<void> {
-    const deleted = await this.permissionRepository.deleteById(id);
+  async delete(tenantId: string | Types.ObjectId, id: string, context: RequestContext): Promise<void> {
+    const deleted = await this.permissionRepository.deleteById(tenantId, id);
     if (!deleted) {
       throw ApiError.notFound('Permission not found');
     }
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'permission.delete',
       ip: context.ip,

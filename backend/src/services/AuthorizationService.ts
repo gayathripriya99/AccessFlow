@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { UserRepository } from '../repositories/UserRepository';
 import { RoleRepository } from '../repositories/RoleRepository';
 import { RoleDocument } from '../models/Role';
@@ -25,8 +26,8 @@ export class AuthorizationService {
    * since access JWTs are stateless and requireAuth alone can't see DB-side
    * deactivation/deletion.
    */
-  async resolveAccess(userId: string): Promise<ResolvedAccess> {
-    const user = await this.userRepository.findByIdWithPermissions(userId);
+  async resolveAccess(tenantId: string | Types.ObjectId, userId: string): Promise<ResolvedAccess> {
+    const user = await this.userRepository.findByIdWithPermissions(tenantId, userId);
     if (!user || !user.isActive) {
       return EMPTY_ACCESS;
     }
@@ -40,7 +41,7 @@ export class AuthorizationService {
         permissionNames.add(permission.name);
       }
 
-      const ancestors = await this.roleRepository.getAncestorChain(role._id);
+      const ancestors = await this.roleRepository.getAncestorChain(tenantId, role._id);
       for (const ancestor of ancestors) {
         const ancestorPermissions = ancestor.permissions as unknown as PermissionDocument[];
         for (const permission of ancestorPermissions) {
@@ -52,7 +53,7 @@ export class AuthorizationService {
     return { roleNames, permissionNames };
   }
 
-  async getPermissionNames(userId: string): Promise<Set<string>> {
-    return (await this.resolveAccess(userId)).permissionNames;
+  async getPermissionNames(tenantId: string | Types.ObjectId, userId: string): Promise<Set<string>> {
+    return (await this.resolveAccess(tenantId, userId)).permissionNames;
   }
 }

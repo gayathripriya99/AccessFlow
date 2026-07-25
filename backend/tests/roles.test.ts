@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import { createAuthenticatedUser, createNonAdminUser } from './helpers/authenticatedUser';
+import { createAuthenticatedUser, createNonAdminUser, joinOrg } from './helpers/authenticatedUser';
 
 const app = createApp();
 
@@ -74,7 +74,8 @@ describe('Roles API', () => {
   });
 
   it('updates a role and deletes it, cascading out of assigned users', async () => {
-    const auth = await authHeader();
+    const admin = await createAuthenticatedUser(app);
+    const auth = `Bearer ${admin.accessToken}`;
     const created = await request(app)
       .post('/api/v1/roles')
       .set('Authorization', auth)
@@ -88,7 +89,7 @@ describe('Roles API', () => {
     expect(updated.status).toBe(200);
     expect(updated.body.data.description).toBe('updated description');
 
-    const { userId } = await createAuthenticatedUser(app);
+    const { userId } = await joinOrg(app, admin.tenantSlug);
     await request(app)
       .patch(`/api/v1/users/${userId}`)
       .set('Authorization', auth)
@@ -188,7 +189,7 @@ describe('Role hierarchy (Phase 7)', () => {
   it('inherited permissions actually authorize real requests, not just the Role API response', async () => {
     const admin = await createAuthenticatedUser(app);
     const auth = `Bearer ${admin.accessToken}`;
-    const other = await createAuthenticatedUser(app);
+    const other = await joinOrg(app, admin.tenantSlug);
 
     const parent = await request(app)
       .post('/api/v1/roles')

@@ -15,23 +15,23 @@ export class UserController {
     const pagination = parsePagination(req);
     const search = typeof req.query.search === 'string' ? req.query.search : undefined;
     const isActive = req.query.isActive === undefined ? undefined : req.query.isActive === 'true';
-    const { items, meta } = await this.userService.list({ search, isActive }, pagination);
+    const { items, meta } = await this.userService.list(req.auth!.tenantId, { search, isActive }, pagination);
     res.status(200).json({ data: items, meta });
   });
 
   getById = asyncHandler(async (req: Request, res: Response) => {
-    const user = await this.userService.getById(req.params.id);
+    const user = await this.userService.getById(req.auth!.tenantId, req.params.id);
     res.status(200).json({ data: user });
   });
 
   update = asyncHandler(async (req: Request, res: Response) => {
     const input = req.body as UpdateUserBody;
-    const user = await this.userService.update(req.params.id, input, requestContext(req));
+    const user = await this.userService.update(req.auth!.tenantId, req.params.id, input, requestContext(req));
     res.status(200).json({ data: user });
   });
 
   delete = asyncHandler(async (req: Request, res: Response) => {
-    await this.userService.delete(req.params.id, requestContext(req));
+    await this.userService.delete(req.auth!.tenantId, req.params.id, requestContext(req));
     res.status(204).send();
   });
 }

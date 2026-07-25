@@ -1,15 +1,17 @@
 import { apiClient } from './client';
 import type { ApiItemResponse, CurrentUser } from './types';
 
-export interface RegisterInput {
-  email: string;
-  password: string;
-  name: string;
-}
+// Phase 9: registering either starts a brand-new organization (the
+// registrant becomes its admin) or joins an existing one by slug, as a
+// roleless user — mirrors the backend's discriminated register body.
+export type RegisterInput =
+  | { mode: 'create'; email: string; password: string; name: string; tenantName: string; tenantSlug: string }
+  | { mode: 'join'; email: string; password: string; name: string; tenantSlug: string };
 
 export interface LoginInput {
   email: string;
   password: string;
+  tenantSlug: string;
 }
 
 export interface PublicUser {

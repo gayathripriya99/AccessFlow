@@ -28,6 +28,7 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 export interface AuditLogDocument extends Document {
   _id: Types.ObjectId;
+  tenantId: Types.ObjectId;
   userId: Types.ObjectId | null;
   action: AuditAction;
   ip: string | null;
@@ -38,6 +39,12 @@ export interface AuditLogDocument extends Document {
 
 const auditLogSchema = new Schema<AuditLogDocument>(
   {
+    tenantId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: true,
+      index: true,
+    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',

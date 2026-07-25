@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import { createAuthenticatedUser, createNonAdminUser } from './helpers/authenticatedUser';
+import { createAuthenticatedUser, createNonAdminUser, joinOrg } from './helpers/authenticatedUser';
 
 const app = createApp();
 
@@ -58,7 +58,7 @@ describe('Audit Logs API', () => {
 
   it('filters by userId', async () => {
     const first = await createAuthenticatedUser(app);
-    const second = await createAuthenticatedUser(app);
+    const second = await joinOrg(app, first.tenantSlug);
     const auth = `Bearer ${first.accessToken}`;
 
     const res = await request(app).get(`/api/v1/audit-logs?userId=${second.userId}`).set('Authorization', auth);

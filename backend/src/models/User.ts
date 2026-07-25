@@ -3,6 +3,7 @@ import { toJSONOptions } from './schemaOptions';
 
 export interface UserDocument extends Document {
   _id: Types.ObjectId;
+  tenantId: Types.ObjectId;
   email: string;
   passwordHash: string;
   name: string;
@@ -16,10 +17,15 @@ export interface UserDocument extends Document {
 
 const userSchema = new Schema<UserDocument>(
   {
+    tenantId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: true,
+      index: true,
+    },
     email: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -45,5 +51,9 @@ const userSchema = new Schema<UserDocument>(
   },
   { timestamps: true, toJSON: toJSONOptions },
 );
+
+// Phase 9: email uniqueness is per-tenant, not global — the same address
+// can hold separate accounts in separate organizations.
+userSchema.index({ tenantId: 1, email: 1 }, { unique: true });
 
 export const User = model<UserDocument>('User', userSchema);

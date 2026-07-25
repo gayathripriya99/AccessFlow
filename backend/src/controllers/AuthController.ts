@@ -52,7 +52,7 @@ export class AuthController {
   });
 
   me = asyncHandler(async (req: Request, res: Response) => {
-    const user = await this.authService.getCurrentUser(req.auth!.userId);
+    const user = await this.authService.getCurrentUser(req.auth!.tenantId, req.auth!.userId);
     res.status(200).json({ data: user });
   });
 }

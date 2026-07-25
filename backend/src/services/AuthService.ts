@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { Types } from 'mongoose';
 import { UserRepository } from '../repositories/UserRepository';
+import { TenantRepository } from '../repositories/TenantRepository';
 import { RefreshTokenRepository } from '../repositories/RefreshTokenRepository';
 import { AuditLogRepository } from '../repositories/AuditLogRepository';
 import { AdminBootstrapService } from './AdminBootstrapService';
@@ -14,6 +15,8 @@ import {
   verifyRefreshToken,
 } from '../utils/jwt';
 import { UserDocument } from '../models/User';
+import { TenantDocument } from '../models/Tenant';
+import { RegisterInput as RegisterBody, LoginInput as LoginBody } from '../validators/auth.validators';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -27,16 +30,8 @@ export interface RequestContext {
   actorId?: string | null;
 }
 
-export interface RegisterInput {
-  email: string;
-  password: string;
-  name: string;
-}
-
-export interface LoginInput {
-  email: string;
-  password: string;
-}
+export type RegisterInput = RegisterBody;
+export type LoginInput = LoginBody;
 
 export interface AuthTokens {
   accessToken: string;
@@ -52,6 +47,7 @@ export interface PublicUser {
 export interface CurrentUser extends PublicUser {
   roles: string[];
   permissions: string[];
+  tenant: { id: string; name: string; slug: string };
 }
 
 function toPublicUser(user: UserDocument): PublicUser {
@@ -61,6 +57,7 @@ function toPublicUser(user: UserDocument): PublicUser {
 export class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
+    private readonly tenantRepository: TenantRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly auditLogRepository: AuditLogRepository,
     private readonly adminBootstrapService: AdminBootstrapService,
@@ -68,21 +65,24 @@ export class AuthService {
   ) {}
 
   async register(input: RegisterInput, context: RequestContext): Promise<PublicUser> {
-    const existing = await this.userRepository.findByEmail(input.email);
+    const tenant =
+      input.mode === 'create' ? await this.createTenant(input.tenantName, input.tenantSlug) : await this.findTenantOrThrow(input.tenantSlug);
+
+    const existing = await this.userRepository.findByEmail(tenant._id, input.email);
     if (existing) {
-      throw ApiError.conflict('An account with this email already exists');
+      throw ApiError.conflict('An account with this email already exists in this organization');
     }
 
     const passwordHash = await bcrypt.hash(input.password, BCRYPT_SALT_ROUNDS);
-    const user = await this.userRepository.create({
+    const user = await this.userRepository.create(tenant._id, {
       email: input.email,
       passwordHash,
       name: input.name,
     });
 
-    await this.adminBootstrapService.bootstrapFirstUserAsAdmin(user);
+    await this.adminBootstrapService.bootstrapFirstUserAsAdmin(tenant._id, user);
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenant._id, {
       userId: user._id,
       action: 'auth.register',
       ip: context.ip,
@@ -93,23 +93,30 @@ export class AuthService {
   }
 
   async login(input: LoginInput, context: RequestContext): Promise<{ user: PublicUser } & AuthTokens> {
-    const user = await this.userRepository.findByEmail(input.email, true);
+    const tenant = await this.tenantRepository.findBySlug(input.tenantSlug);
+    if (!tenant) {
+      // Don't distinguish "no such org" from "wrong password" — avoids
+      // leaking which organization slugs exist to an unauthenticated caller.
+      throw ApiError.unauthorized('Invalid email, password, or organization');
+    }
+
+    const user = await this.userRepository.findByEmail(tenant._id, input.email, true);
     const passwordMatches = user ? await bcrypt.compare(input.password, user.passwordHash) : false;
 
     if (!user || !user.isActive || !passwordMatches) {
-      await this.auditLogRepository.record({
+      await this.auditLogRepository.record(tenant._id, {
         userId: user?._id ?? null,
         action: 'auth.login.failure',
         ip: context.ip,
         userAgent: context.userAgent,
         metadata: { email: input.email },
       });
-      throw ApiError.unauthorized('Invalid email or password');
+      throw ApiError.unauthorized('Invalid email, password, or organization');
     }
 
-    const tokens = await this.issueTokenPair(user._id);
+    const tokens = await this.issueTokenPair(tenant._id, user._id);
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenant._id, {
       userId: user._id,
       action: 'auth.login.success',
       ip: context.ip,
@@ -137,12 +144,15 @@ export class AuthService {
       // replaying an old refresh token. Treat the whole session as
       // compromised and revoke every active token for this user.
       await this.refreshTokenRepository.revokeAllForUser(payload.sub);
-      await this.auditLogRepository.record({
-        userId: new Types.ObjectId(payload.sub),
-        action: 'auth.refresh.reuse_detected',
-        ip: context.ip,
-        userAgent: context.userAgent,
-      });
+      const user = await this.userRepository.findByIdAcrossTenants(payload.sub);
+      if (user) {
+        await this.auditLogRepository.record(user.tenantId, {
+          userId: new Types.ObjectId(payload.sub),
+          action: 'auth.refresh.reuse_detected',
+          ip: context.ip,
+          userAgent: context.userAgent,
+        });
+      }
       throw ApiError.unauthorized('Refresh token has already been used');
     }
 
@@ -150,9 +160,17 @@ export class AuthService {
       throw ApiError.unauthorized('Invalid or expired refresh token');
     }
 
-    const tokens = await this.issueTokenPair(stored.userId, stored._id);
+    // The refresh token carries no tenant claim (by design — see
+    // RefreshTokenRepository), so the user's own tenantId re-establishes
+    // tenant context for the rest of this flow.
+    const user = await this.userRepository.findByIdAcrossTenants(stored.userId);
+    if (!user) {
+      throw ApiError.unauthorized('User no longer exists');
+    }
 
-    await this.auditLogRepository.record({
+    const tokens = await this.issueTokenPair(user.tenantId, stored.userId, stored._id);
+
+    await this.auditLogRepository.record(user.tenantId, {
       userId: stored.userId,
       action: 'auth.refresh',
       ip: context.ip,
@@ -166,28 +184,60 @@ export class AuthService {
     try {
       const payload = verifyRefreshToken(presentedToken);
       await this.refreshTokenRepository.revoke(payload.jti);
-      await this.auditLogRepository.record({
-        userId: new Types.ObjectId(payload.sub),
-        action: 'auth.logout',
-        ip: context.ip,
-        userAgent: context.userAgent,
-      });
+      const user = await this.userRepository.findByIdAcrossTenants(payload.sub);
+      if (user) {
+        await this.auditLogRepository.record(user.tenantId, {
+          userId: new Types.ObjectId(payload.sub),
+          action: 'auth.logout',
+          ip: context.ip,
+          userAgent: context.userAgent,
+        });
+      }
     } catch {
       // Already invalid/expired/missing — logout is idempotent either way.
     }
   }
 
-  async getCurrentUser(userId: string): Promise<CurrentUser> {
-    const user = await this.userRepository.findById(userId);
+  async getCurrentUser(tenantId: string, userId: string): Promise<CurrentUser> {
+    const user = await this.userRepository.findById(tenantId, userId);
     if (!user) {
       throw ApiError.notFound('User not found');
     }
-    const { roleNames, permissionNames } = await this.authorizationService.resolveAccess(userId);
-    return { ...toPublicUser(user), roles: roleNames, permissions: Array.from(permissionNames) };
+    const tenant = await this.tenantRepository.findById(tenantId);
+    if (!tenant) {
+      throw ApiError.notFound('Organization not found');
+    }
+    const { roleNames, permissionNames } = await this.authorizationService.resolveAccess(tenantId, userId);
+    return {
+      ...toPublicUser(user),
+      roles: roleNames,
+      permissions: Array.from(permissionNames),
+      tenant: { id: tenant._id.toString(), name: tenant.name, slug: tenant.slug },
+    };
   }
 
-  private async issueTokenPair(userId: Types.ObjectId, oldTokenId?: Types.ObjectId): Promise<AuthTokens> {
-    const user = await this.userRepository.findById(userId);
+  private async createTenant(name: string, slug: string): Promise<TenantDocument> {
+    const existing = await this.tenantRepository.findBySlug(slug);
+    if (existing) {
+      throw ApiError.conflict('An organization with this slug already exists');
+    }
+    return this.tenantRepository.create({ name, slug });
+  }
+
+  private async findTenantOrThrow(slug: string): Promise<TenantDocument> {
+    const tenant = await this.tenantRepository.findBySlug(slug);
+    if (!tenant) {
+      throw ApiError.notFound('No organization found with this slug');
+    }
+    return tenant;
+  }
+
+  private async issueTokenPair(
+    tenantId: Types.ObjectId,
+    userId: Types.ObjectId,
+    oldTokenId?: Types.ObjectId,
+  ): Promise<AuthTokens> {
+    const user = await this.userRepository.findById(tenantId, userId);
     if (!user) {
       throw ApiError.unauthorized('User no longer exists');
     }
@@ -206,7 +256,7 @@ export class AuthService {
       await this.refreshTokenRepository.revoke(oldTokenId, newTokenId);
     }
 
-    const accessToken = signAccessToken({ sub: userId.toString(), email: user.email });
+    const accessToken = signAccessToken({ sub: userId.toString(), email: user.email, tenantId: tenantId.toString() });
 
     return { accessToken, refreshToken };
   }

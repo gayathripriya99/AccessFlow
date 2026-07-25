@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { UserRepository } from '../repositories/UserRepository';
 import { RoleRepository } from '../repositories/RoleRepository';
 import { ApiError } from '../utils/ApiError';
@@ -22,23 +23,31 @@ export class SimulatorService {
     private readonly roleRepository: RoleRepository,
   ) {}
 
-  async simulateForUser(userId: string, permission: string): Promise<SimulationResult> {
-    const user = await this.userRepository.findByIdWithPermissions(userId);
+  async simulateForUser(
+    tenantId: string | Types.ObjectId,
+    userId: string,
+    permission: string,
+  ): Promise<SimulationResult> {
+    const user = await this.userRepository.findByIdWithPermissions(tenantId, userId);
     if (!user) {
       throw ApiError.notFound('User not found');
     }
     const roles = user.roles as unknown as RoleDocument[];
-    const result = await this.resolve(roles, permission);
+    const result = await this.resolve(tenantId, roles, permission);
     return { ...result, userActive: user.isActive, allowed: user.isActive && result.allowed };
   }
 
-  async simulateForRoles(roleIds: string[], permission: string): Promise<SimulationResult> {
-    const roles = await Promise.all(roleIds.map((id) => this.roleRepository.findById(id, true)));
+  async simulateForRoles(
+    tenantId: string | Types.ObjectId,
+    roleIds: string[],
+    permission: string,
+  ): Promise<SimulationResult> {
+    const roles = await Promise.all(roleIds.map((id) => this.roleRepository.findById(tenantId, id, true)));
     const missingIndex = roles.findIndex((role) => !role);
     if (missingIndex !== -1) {
       throw ApiError.badRequest(`Unknown role id: ${roleIds[missingIndex]}`);
     }
-    return this.resolve(roles as RoleDocument[], permission);
+    return this.resolve(tenantId, roles as RoleDocument[], permission);
   }
 
   /** A role "grants" the checked permission if it does so directly or via
@@ -46,14 +55,18 @@ export class SimulatorService {
    * view "I have role X, therefore I can do Y" holds regardless of whether X
    * or one of X's ancestors is the one that actually carries the permission,
    * so each role is resolved to its full own+inherited set before checking. */
-  private async resolve(roles: RoleDocument[], permission: string): Promise<SimulationResult> {
+  private async resolve(
+    tenantId: string | Types.ObjectId,
+    roles: RoleDocument[],
+    permission: string,
+  ): Promise<SimulationResult> {
     const roleNames = roles.map((role) => role.name);
     const grantedByRoles: string[] = [];
     const resolvedPermissions = new Set<string>();
 
     for (const role of roles) {
       const ownNames = (role.permissions as unknown as PermissionDocument[]).map((p) => p.name);
-      const ancestors = await this.roleRepository.getAncestorChain(role._id);
+      const ancestors = await this.roleRepository.getAncestorChain(tenantId, role._id);
       const inheritedNames = ancestors.flatMap((ancestor) =>
         (ancestor.permissions as unknown as PermissionDocument[]).map((p) => p.name),
       );

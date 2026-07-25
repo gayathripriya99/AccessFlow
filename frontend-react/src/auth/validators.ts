@@ -1,21 +1,42 @@
 import { z } from 'zod';
 
+// Phase 9: organization slugs are the one thing that stays globally unique —
+// mirrors backend/src/validators/auth.validators.ts's tenantSlugSchema.
+const tenantSlugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2)
+  .max(60)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+
+const passwordSchema = z
+  .string()
+  .min(8)
+  .regex(/[a-z]/)
+  .regex(/[A-Z]/)
+  .regex(/[0-9]/);
+
 export const loginSchema = z.object({
   email: z.email(),
   password: z.string().min(1),
+  tenantSlug: tenantSlugSchema,
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 
+// `tenantName` is only actually required in 'create' mode, but react-hook-form's
+// FieldErrors/register typing doesn't cope well with a Zod discriminated union
+// where a field only exists on one branch — so this stays one flat schema
+// (tenantName optional at the schema level) and RegisterPage enforces the
+// create-mode requirement itself (mode is local component state, not a form
+// field) before building the actual discriminated RegisterInput payload.
 export const registerSchema = z.object({
   name: z.string().min(1),
   email: z.email(),
-  password: z
-    .string()
-    .min(8)
-    .regex(/[a-z]/)
-    .regex(/[A-Z]/)
-    .regex(/[0-9]/),
+  password: passwordSchema,
+  tenantName: z.string().trim().optional(),
+  tenantSlug: tenantSlugSchema,
 });
 
 export type RegisterFormValues = z.infer<typeof registerSchema>;

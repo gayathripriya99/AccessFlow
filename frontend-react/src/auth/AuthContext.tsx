@@ -11,7 +11,7 @@ interface AuthContextValue {
   status: AuthStatus;
   currentUser: CurrentUser | null;
   sessionExpired: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, tenantSlug: string) => Promise<void>;
   register: (input: authApi.RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -57,8 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, [clearSession]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const result = await authApi.login({ email, password });
+  const login = useCallback(async (email: string, password: string, tenantSlug: string) => {
+    const result = await authApi.login({ email, password, tenantSlug });
     setAccessToken(result.accessToken);
     const user = await authApi.getCurrentUser();
     setCurrentUser(user);

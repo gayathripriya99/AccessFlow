@@ -18,8 +18,9 @@ export interface ListAuditLogsFilter {
 }
 
 export class AuditLogRepository {
-  async record(input: RecordAuditEventInput): Promise<void> {
+  async record(tenantId: string | Types.ObjectId, input: RecordAuditEventInput): Promise<void> {
     await AuditLog.create({
+      tenantId,
       userId: input.userId ?? null,
       action: input.action,
       ip: input.ip ?? null,
@@ -29,10 +30,11 @@ export class AuditLogRepository {
   }
 
   async list(
+    tenantId: string | Types.ObjectId,
     filter: ListAuditLogsFilter,
     pagination: PaginationParams,
   ): Promise<{ items: AuditLogDocument[]; total: number }> {
-    const query: FilterQuery<AuditLogDocument> = {};
+    const query: FilterQuery<AuditLogDocument> = { tenantId };
     if (filter.action) {
       query.action = filter.action;
     }

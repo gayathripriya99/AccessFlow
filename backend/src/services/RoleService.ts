@@ -23,16 +23,20 @@ export class RoleService {
     private readonly auditLogRepository: AuditLogRepository,
   ) {}
 
-  async create(input: CreateRoleBody, context: RequestContext): Promise<RoleDocument> {
-    const existing = await this.roleRepository.findByName(input.name);
+  async create(
+    tenantId: string | Types.ObjectId,
+    input: CreateRoleBody,
+    context: RequestContext,
+  ): Promise<RoleDocument> {
+    const existing = await this.roleRepository.findByName(tenantId, input.name);
     if (existing) {
       throw ApiError.conflict('A role with this name already exists');
     }
 
-    await this.assertPermissionsExist(input.permissions ?? []);
+    await this.assertPermissionsExist(tenantId, input.permissions ?? []);
     // A brand-new role has no children yet, so a parent assigned at create
     // time can never introduce a cycle — only existence needs checking.
-    const parentRole = await this.resolveParent(null, input.parentRoleId);
+    const parentRole = await this.resolveParent(tenantId, null, input.parentRoleId);
 
     const createInput: CreateRoleInput = {
       name: input.name,
@@ -40,9 +44,9 @@ export class RoleService {
       permissions: toObjectIdArray(input.permissions ?? []),
       parentRole,
     };
-    const role = await this.roleRepository.create(createInput);
+    const role = await this.roleRepository.create(tenantId, createInput);
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'role.create',
       ip: context.ip,
@@ -53,10 +57,11 @@ export class RoleService {
   }
 
   async list(
+    tenantId: string | Types.ObjectId,
     filter: ListRolesFilter,
     pagination: PaginationParams,
   ): Promise<{ items: RoleDocument[]; meta: PaginationMeta }> {
-    const { items, total } = await this.roleRepository.list(filter, pagination);
+    const { items, total } = await this.roleRepository.list(tenantId, filter, pagination);
     return { items, meta: buildPaginationMeta(pagination, total) };
   }
 
@@ -64,13 +69,13 @@ export class RoleService {
    * `effectivePermissions` is this role's own permissions unioned with every
    * ancestor's, and `ancestorNames` is the chain from immediate parent to
    * root — both purely additive to the existing response shape. */
-  async getById(id: string): Promise<RoleDetail> {
-    const role = await this.roleRepository.findById(id, true);
+  async getById(tenantId: string | Types.ObjectId, id: string): Promise<RoleDetail> {
+    const role = await this.roleRepository.findById(tenantId, id, true);
     if (!role) {
       throw ApiError.notFound('Role not found');
     }
 
-    const ancestors = await this.roleRepository.getAncestorChain(id);
+    const ancestors = await this.roleRepository.getAncestorChain(tenantId, id);
     const effectivePermissions = new Set<string>();
     for (const permission of role.permissions as unknown as PermissionDocument[]) {
       effectivePermissions.add(permission.name);
@@ -88,19 +93,24 @@ export class RoleService {
     };
   }
 
-  async update(id: string, input: UpdateRoleBody, context: RequestContext): Promise<RoleDocument> {
+  async update(
+    tenantId: string | Types.ObjectId,
+    id: string,
+    input: UpdateRoleBody,
+    context: RequestContext,
+  ): Promise<RoleDocument> {
     if (input.name) {
-      const existing = await this.roleRepository.findByName(input.name);
+      const existing = await this.roleRepository.findByName(tenantId, input.name);
       if (existing && existing._id.toString() !== id) {
         throw ApiError.conflict('A role with this name already exists');
       }
     }
 
     if (input.permissions) {
-      await this.assertPermissionsExist(input.permissions);
+      await this.assertPermissionsExist(tenantId, input.permissions);
     }
 
-    const parentRole = await this.resolveParent(id, input.parentRoleId);
+    const parentRole = await this.resolveParent(tenantId, id, input.parentRoleId);
 
     const updateInput: UpdateRoleInput = {
       ...(input.name ? { name: input.name } : {}),
@@ -109,12 +119,12 @@ export class RoleService {
       ...(parentRole !== undefined ? { parentRole } : {}),
     };
 
-    const updated = await this.roleRepository.updateById(id, updateInput);
+    const updated = await this.roleRepository.updateById(tenantId, id, updateInput);
     if (!updated) {
       throw ApiError.notFound('Role not found');
     }
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'role.update',
       ip: context.ip,
@@ -124,13 +134,13 @@ export class RoleService {
     return updated;
   }
 
-  async delete(id: string, context: RequestContext): Promise<void> {
-    const deleted = await this.roleRepository.deleteById(id);
+  async delete(tenantId: string | Types.ObjectId, id: string, context: RequestContext): Promise<void> {
+    const deleted = await this.roleRepository.deleteById(tenantId, id);
     if (!deleted) {
       throw ApiError.notFound('Role not found');
     }
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'role.delete',
       ip: context.ip,
@@ -139,8 +149,8 @@ export class RoleService {
     });
   }
 
-  private async assertPermissionsExist(permissionIds: string[]): Promise<void> {
-    const results = await Promise.all(permissionIds.map((id) => this.permissionRepository.findById(id)));
+  private async assertPermissionsExist(tenantId: string | Types.ObjectId, permissionIds: string[]): Promise<void> {
+    const results = await Promise.all(permissionIds.map((id) => this.permissionRepository.findById(tenantId, id)));
     const missingIndex = results.findIndex((permission) => !permission);
     if (missingIndex !== -1) {
       throw ApiError.badRequest(`Unknown permission id: ${permissionIds[missingIndex]}`);
@@ -151,6 +161,7 @@ export class RoleService {
    * a string = set to that role (existence + cycle-checked). `roleId` is
    * `null` for a create (nothing can be its own ancestor yet). */
   private async resolveParent(
+    tenantId: string | Types.ObjectId,
     roleId: string | null,
     parentRoleId: string | null | undefined,
   ): Promise<Types.ObjectId | null | undefined> {
@@ -161,13 +172,13 @@ export class RoleService {
       return null;
     }
 
-    const parent = await this.roleRepository.findById(parentRoleId);
+    const parent = await this.roleRepository.findById(tenantId, parentRoleId);
     if (!parent) {
       throw ApiError.badRequest(`Unknown parent role id: ${parentRoleId}`);
     }
 
     if (roleId !== null) {
-      const cycle = await this.roleRepository.wouldCreateCycle(roleId, parentRoleId);
+      const cycle = await this.roleRepository.wouldCreateCycle(tenantId, roleId, parentRoleId);
       if (cycle) {
         throw ApiError.badRequest('Setting this parent would create a role hierarchy cycle');
       }

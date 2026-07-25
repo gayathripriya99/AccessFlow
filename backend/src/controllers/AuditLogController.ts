@@ -11,6 +11,7 @@ export class AuditLogController {
     const pagination = parsePagination(req);
     const { action, userId, from, to } = req.query;
     const { items, meta } = await this.auditLogService.list(
+      req.auth!.tenantId,
       {
         action: typeof action === 'string' ? (action as AuditAction) : undefined,
         userId: typeof userId === 'string' ? userId : undefined,

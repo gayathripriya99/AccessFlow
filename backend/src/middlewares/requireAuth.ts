@@ -4,7 +4,7 @@ import { verifyAccessToken } from '../utils/jwt';
 
 declare module 'express-serve-static-core' {
   interface Request {
-    auth?: { userId: string; email: string };
+    auth?: { userId: string; email: string; tenantId: string };
   }
 }
 
@@ -22,7 +22,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
   const token = header.slice('Bearer '.length);
   try {
     const payload = verifyAccessToken(token);
-    req.auth = { userId: payload.sub, email: payload.email };
+    req.auth = { userId: payload.sub, email: payload.email, tenantId: payload.tenantId };
     next();
   } catch {
     next(ApiError.unauthorized('Invalid or expired access token'));

@@ -28,6 +28,7 @@ export interface PolicyCondition {
 
 export interface PolicyDocument extends Document {
   _id: Types.ObjectId;
+  tenantId: Types.ObjectId;
   name: string;
   description: string;
   resource: string;
@@ -50,10 +51,15 @@ const policyConditionSchema = new Schema<PolicyCondition>(
 
 const policySchema = new Schema<PolicyDocument>(
   {
+    tenantId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: true,
+      index: true,
+    },
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       lowercase: true,
     },

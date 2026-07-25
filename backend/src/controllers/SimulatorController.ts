@@ -10,8 +10,8 @@ export class SimulatorController {
     const body = req.body as SimulateBody;
     const result =
       body.mode === 'user'
-        ? await this.simulatorService.simulateForUser(body.userId, body.permission)
-        : await this.simulatorService.simulateForRoles(body.roleIds, body.permission);
+        ? await this.simulatorService.simulateForUser(req.auth!.tenantId, body.userId, body.permission)
+        : await this.simulatorService.simulateForRoles(req.auth!.tenantId, body.roleIds, body.permission);
     res.status(200).json({ data: result });
   });
 }

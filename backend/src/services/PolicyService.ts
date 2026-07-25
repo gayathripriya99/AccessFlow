@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { CreatePolicyInput, ListPoliciesFilter, PolicyRepository, UpdatePolicyInput } from '../repositories/PolicyRepository';
 import { AuditLogRepository } from '../repositories/AuditLogRepository';
 import { ApiError } from '../utils/ApiError';
@@ -12,14 +13,18 @@ export class PolicyService {
     private readonly auditLogRepository: AuditLogRepository,
   ) {}
 
-  async create(input: CreatePolicyBody, context: RequestContext): Promise<PolicyDocument> {
-    const existing = await this.policyRepository.findByName(input.name);
+  async create(
+    tenantId: string | Types.ObjectId,
+    input: CreatePolicyBody,
+    context: RequestContext,
+  ): Promise<PolicyDocument> {
+    const existing = await this.policyRepository.findByName(tenantId, input.name);
     if (existing) {
       throw ApiError.conflict('A policy with this name already exists');
     }
 
-    const policy = await this.policyRepository.create(input as CreatePolicyInput);
-    await this.auditLogRepository.record({
+    const policy = await this.policyRepository.create(tenantId, input as CreatePolicyInput);
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'policy.create',
       ip: context.ip,
@@ -30,35 +35,41 @@ export class PolicyService {
   }
 
   async list(
+    tenantId: string | Types.ObjectId,
     filter: ListPoliciesFilter,
     pagination: PaginationParams,
   ): Promise<{ items: PolicyDocument[]; meta: PaginationMeta }> {
-    const { items, total } = await this.policyRepository.list(filter, pagination);
+    const { items, total } = await this.policyRepository.list(tenantId, filter, pagination);
     return { items, meta: buildPaginationMeta(pagination, total) };
   }
 
-  async getById(id: string): Promise<PolicyDocument> {
-    const policy = await this.policyRepository.findById(id);
+  async getById(tenantId: string | Types.ObjectId, id: string): Promise<PolicyDocument> {
+    const policy = await this.policyRepository.findById(tenantId, id);
     if (!policy) {
       throw ApiError.notFound('Policy not found');
     }
     return policy;
   }
 
-  async update(id: string, input: UpdatePolicyBody, context: RequestContext): Promise<PolicyDocument> {
+  async update(
+    tenantId: string | Types.ObjectId,
+    id: string,
+    input: UpdatePolicyBody,
+    context: RequestContext,
+  ): Promise<PolicyDocument> {
     if (input.name) {
-      const existing = await this.policyRepository.findByName(input.name);
+      const existing = await this.policyRepository.findByName(tenantId, input.name);
       if (existing && existing._id.toString() !== id) {
         throw ApiError.conflict('A policy with this name already exists');
       }
     }
 
-    const updated = await this.policyRepository.updateById(id, input as UpdatePolicyInput);
+    const updated = await this.policyRepository.updateById(tenantId, id, input as UpdatePolicyInput);
     if (!updated) {
       throw ApiError.notFound('Policy not found');
     }
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'policy.update',
       ip: context.ip,
@@ -68,13 +79,13 @@ export class PolicyService {
     return updated;
   }
 
-  async delete(id: string, context: RequestContext): Promise<void> {
-    const deleted = await this.policyRepository.deleteById(id);
+  async delete(tenantId: string | Types.ObjectId, id: string, context: RequestContext): Promise<void> {
+    const deleted = await this.policyRepository.deleteById(tenantId, id);
     if (!deleted) {
       throw ApiError.notFound('Policy not found');
     }
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'policy.delete',
       ip: context.ip,

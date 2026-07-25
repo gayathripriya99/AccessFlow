@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import { createAuthenticatedUser, createNonAdminUser } from './helpers/authenticatedUser';
+import { createAuthenticatedUser, createNonAdminUser, joinOrg } from './helpers/authenticatedUser';
 
 const app = createApp();
 
@@ -41,7 +41,7 @@ describe('Permission Simulator API', () => {
   it('user mode: denies a permission the target user\'s roles do not grant', async () => {
     const admin = await createAuthenticatedUser(app);
     const auth = `Bearer ${admin.accessToken}`;
-    const other = await createAuthenticatedUser(app);
+    const other = await joinOrg(app, admin.tenantSlug);
 
     const role = await request(app)
       .post('/api/v1/roles')
@@ -78,7 +78,7 @@ describe('Permission Simulator API', () => {
   it('user mode: a deactivated user always resolves to denied, even if a role would grant it', async () => {
     const admin = await createAuthenticatedUser(app);
     const auth = `Bearer ${admin.accessToken}`;
-    const other = await createAuthenticatedUser(app);
+    const other = await joinOrg(app, admin.tenantSlug);
 
     await request(app)
       .patch(`/api/v1/users/${other.userId}`)

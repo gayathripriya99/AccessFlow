@@ -62,6 +62,7 @@ export interface CurrentUser {
   name: string;
   roles: string[];
   permissions: string[];
+  tenant: { id: string; name: string; slug: string };
 }
 
 export function isPopulatedPermissions(permissions: Permission[] | string[]): permissions is Permission[] {

@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { ListUsersFilter, UpdateUserInput, UserRepository } from '../repositories/UserRepository';
 import { RoleRepository } from '../repositories/RoleRepository';
 import { RefreshTokenRepository } from '../repositories/RefreshTokenRepository';
@@ -20,36 +21,42 @@ export class UserService {
   ) {}
 
   async list(
+    tenantId: string | Types.ObjectId,
     filter: ListUsersFilter,
     pagination: PaginationParams,
   ): Promise<{ items: UserDocument[]; meta: PaginationMeta }> {
-    const { items, total } = await this.userRepository.list(filter, pagination);
+    const { items, total } = await this.userRepository.list(tenantId, filter, pagination);
     return { items, meta: buildPaginationMeta(pagination, total) };
   }
 
-  async getById(id: string): Promise<UserDocument> {
-    const user = await this.userRepository.findById(id, true);
+  async getById(tenantId: string | Types.ObjectId, id: string): Promise<UserDocument> {
+    const user = await this.userRepository.findById(tenantId, id, true);
     if (!user) {
       throw ApiError.notFound('User not found');
     }
     return user;
   }
 
-  async update(id: string, input: UpdateUserBody, context: RequestContext): Promise<UserDocument> {
+  async update(
+    tenantId: string | Types.ObjectId,
+    id: string,
+    input: UpdateUserBody,
+    context: RequestContext,
+  ): Promise<UserDocument> {
     // Phase 8: a caller reaching this via the ABAC self-service-update policy
     // (not a real users.update grant) may only ever touch their own `name` —
     // otherwise "update your own profile" would double as "grant yourself
     // any role you like," which defeats the entire permission system. Real
     // admins (who do hold users.update) are unaffected by this check.
     if (context.actorId === id && (input.roles !== undefined || input.isActive !== undefined)) {
-      const actorPermissions = await this.authorizationService.getPermissionNames(context.actorId);
+      const actorPermissions = await this.authorizationService.getPermissionNames(tenantId, context.actorId);
       if (!actorPermissions.has('users.update')) {
         throw ApiError.forbidden('Self-service profile updates may only change your name, not roles or active status');
       }
     }
 
     if (input.roles) {
-      await this.assertRolesExist(input.roles);
+      await this.assertRolesExist(tenantId, input.roles);
     }
 
     const updateInput: UpdateUserInput = {
@@ -58,12 +65,12 @@ export class UserService {
       ...(input.roles ? { roles: toObjectIdArray(input.roles) } : {}),
     };
 
-    const updated = await this.userRepository.updateById(id, updateInput);
+    const updated = await this.userRepository.updateById(tenantId, id, updateInput);
     if (!updated) {
       throw ApiError.notFound('User not found');
     }
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'user.update',
       ip: context.ip,
@@ -73,14 +80,14 @@ export class UserService {
     return updated;
   }
 
-  async delete(id: string, context: RequestContext): Promise<void> {
-    const deleted = await this.userRepository.deleteById(id);
+  async delete(tenantId: string | Types.ObjectId, id: string, context: RequestContext): Promise<void> {
+    const deleted = await this.userRepository.deleteById(tenantId, id);
     if (!deleted) {
       throw ApiError.notFound('User not found');
     }
     await this.refreshTokenRepository.revokeAllForUser(deleted._id);
 
-    await this.auditLogRepository.record({
+    await this.auditLogRepository.record(tenantId, {
       userId: context.actorId,
       action: 'user.delete',
       ip: context.ip,
@@ -89,8 +96,8 @@ export class UserService {
     });
   }
 
-  private async assertRolesExist(roleIds: string[]): Promise<void> {
-    const results = await Promise.all(roleIds.map((id) => this.roleRepository.findById(id)));
+  private async assertRolesExist(tenantId: string | Types.ObjectId, roleIds: string[]): Promise<void> {
+    const results = await Promise.all(roleIds.map((id) => this.roleRepository.findById(tenantId, id)));
     const missingIndex = results.findIndex((role) => !role);
     if (missingIndex !== -1) {
       throw ApiError.badRequest(`Unknown role id: ${roleIds[missingIndex]}`);

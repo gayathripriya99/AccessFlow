@@ -48,7 +48,8 @@
       "noAccount": "Vous n'avez pas de compte ?",
       "registerLink": "S'inscrire",
       "invalidCredentials": "E-mail ou mot de passe invalide.",
-      "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
+      "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+      "tenantSlug": "Identifiant de l'organisation"
     },
     "register": {
       "title": "Créez votre compte AccessFlow",
@@ -56,13 +57,21 @@
       "submit": "S'inscrire",
       "haveAccount": "Vous avez déjà un compte ?",
       "loginLink": "Se connecter",
-      "success": "Compte créé — veuillez vous connecter."
+      "success": "Compte créé — veuillez vous connecter.",
+      "modeLabel": "Type d'inscription",
+      "modeCreate": "Créer une nouvelle organisation",
+      "modeJoin": "Rejoindre une organisation existante",
+      "tenantName": "Nom de l'organisation",
+      "tenantSlug": "Identifiant de l'organisation"
     },
     "validation": {
       "emailRequired": "Entrez une adresse e-mail valide.",
       "passwordRequired": "Le mot de passe est requis.",
       "passwordWeak": "Le mot de passe doit comporter au moins 8 caractères et inclure une majuscule, une minuscule et un chiffre.",
-      "nameRequired": "Entrez votre nom."
+      "nameRequired": "Entrez votre nom.",
+      "tenantNameRequired": "Entrez le nom de votre organisation.",
+      "tenantSlugRequired": "Entrez l'identifiant de votre organisation.",
+      "tenantSlugInvalid": "Utilisez uniquement des lettres minuscules, des chiffres et des tirets (ex. « acme-corp »)."
     }
   },
   "dashboard": {

@@ -28,6 +28,9 @@ export function Sidebar() {
 
         {currentUser && (
           <div className="mt-auto rounded-md border border-gray-200 bg-gray-50 p-3">
+            <p className="truncate text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {currentUser.tenant.name}
+            </p>
             <p className="truncate text-sm font-medium text-gray-900">{currentUser.name}</p>
             <p className="truncate text-xs text-gray-500">{currentUser.email}</p>
             {currentUser.roles.length > 0 && (

@@ -27,7 +27,7 @@ AccessFlow/
 | 6 | Permission Simulator | Complete — see [backend/Phase-06.md](backend/Phase-06.md) |
 | 7 | Advanced RBAC (Role Hierarchy) | Complete — see [backend/Phase-07.md](backend/Phase-07.md) |
 | 8 | ABAC | Complete — see [backend/Phase-08.md](backend/Phase-08.md). Scoped to ABAC only; multi-tenant deferred (see that doc) |
-| 8b | Multi-tenant | Not started |
+| 9 | Multi-tenant | Complete — see [backend/Phase-09.md](backend/Phase-09.md) |
 
 ## Getting started
 

@@ -13,30 +13,30 @@ export class PermissionController {
 
   create = asyncHandler(async (req: Request, res: Response) => {
     const input = req.body as CreatePermissionBody;
-    const permission = await this.permissionService.create(input, requestContext(req));
+    const permission = await this.permissionService.create(req.auth!.tenantId, input, requestContext(req));
     res.status(201).json({ data: permission });
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
     const pagination = parsePagination(req);
     const search = typeof req.query.search === 'string' ? req.query.search : undefined;
-    const { items, meta } = await this.permissionService.list({ search }, pagination);
+    const { items, meta } = await this.permissionService.list(req.auth!.tenantId, { search }, pagination);
     res.status(200).json({ data: items, meta });
   });
 
   getById = asyncHandler(async (req: Request, res: Response) => {
-    const permission = await this.permissionService.getById(req.params.id);
+    const permission = await this.permissionService.getById(req.auth!.tenantId, req.params.id);
     res.status(200).json({ data: permission });
   });
 
   update = asyncHandler(async (req: Request, res: Response) => {
     const input = req.body as UpdatePermissionBody;
-    const permission = await this.permissionService.update(req.params.id, input, requestContext(req));
+    const permission = await this.permissionService.update(req.auth!.tenantId, req.params.id, input, requestContext(req));
     res.status(200).json({ data: permission });
   });
 
   delete = asyncHandler(async (req: Request, res: Response) => {
-    await this.permissionService.delete(req.params.id, requestContext(req));
+    await this.permissionService.delete(req.auth!.tenantId, req.params.id, requestContext(req));
     res.status(204).send();
   });
 }

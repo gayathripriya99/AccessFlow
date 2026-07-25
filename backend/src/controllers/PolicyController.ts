@@ -13,30 +13,30 @@ export class PolicyController {
 
   create = asyncHandler(async (req: Request, res: Response) => {
     const input = req.body as CreatePolicyBody;
-    const policy = await this.policyService.create(input, requestContext(req));
+    const policy = await this.policyService.create(req.auth!.tenantId, input, requestContext(req));
     res.status(201).json({ data: policy });
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
     const pagination = parsePagination(req);
     const search = typeof req.query.search === 'string' ? req.query.search : undefined;
-    const { items, meta } = await this.policyService.list({ search }, pagination);
+    const { items, meta } = await this.policyService.list(req.auth!.tenantId, { search }, pagination);
     res.status(200).json({ data: items, meta });
   });
 
   getById = asyncHandler(async (req: Request, res: Response) => {
-    const policy = await this.policyService.getById(req.params.id);
+    const policy = await this.policyService.getById(req.auth!.tenantId, req.params.id);
     res.status(200).json({ data: policy });
   });
 
   update = asyncHandler(async (req: Request, res: Response) => {
     const input = req.body as UpdatePolicyBody;
-    const policy = await this.policyService.update(req.params.id, input, requestContext(req));
+    const policy = await this.policyService.update(req.auth!.tenantId, req.params.id, input, requestContext(req));
     res.status(200).json({ data: policy });
   });
 
   delete = asyncHandler(async (req: Request, res: Response) => {
-    await this.policyService.delete(req.params.id, requestContext(req));
+    await this.policyService.delete(req.auth!.tenantId, req.params.id, requestContext(req));
     res.status(204).send();
   });
 }

@@ -4,9 +4,12 @@ import { createApp } from '../src/app';
 const app = createApp();
 
 const credentials = {
+  mode: 'create' as const,
   email: 'jane.doe@example.com',
   password: 'Str0ngPassw0rd!',
   name: 'Jane Doe',
+  tenantName: 'Jane Doe Org',
+  tenantSlug: 'jane-doe-org',
 };
 
 describe('Auth API', () => {
@@ -43,7 +46,7 @@ describe('Auth API', () => {
     it('rejects an incorrect password with 401', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
-        .send({ email: credentials.email, password: 'WrongPassword1' });
+        .send({ email: credentials.email, password: 'WrongPassword1', tenantSlug: credentials.tenantSlug });
 
       expect(res.status).toBe(401);
     });
@@ -51,7 +54,7 @@ describe('Auth API', () => {
     it('issues an access token and sets a refresh cookie on success', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
-        .send({ email: credentials.email, password: credentials.password });
+        .send({ email: credentials.email, password: credentials.password, tenantSlug: credentials.tenantSlug });
 
       expect(res.status).toBe(200);
       expect(res.body.data.accessToken).toEqual(expect.any(String));
@@ -69,7 +72,7 @@ describe('Auth API', () => {
       await request(app).post('/api/v1/auth/register').send(credentials);
       const login = await request(app)
         .post('/api/v1/auth/login')
-        .send({ email: credentials.email, password: credentials.password });
+        .send({ email: credentials.email, password: credentials.password, tenantSlug: credentials.tenantSlug });
 
       const res = await request(app)
         .get('/api/v1/auth/me')
@@ -77,8 +80,9 @@ describe('Auth API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.email).toBe(credentials.email);
-      // This is the first (and only) user in this test's DB, so admin
-      // bootstrap (Phase 3) grants them the full baseline permission set.
+      // This is the first (and only) user in this tenant, so admin
+      // bootstrap (Phase 3, now per-tenant since Phase 9) grants them the
+      // full baseline permission set.
       expect(res.body.data.roles).toEqual(['admin']);
       expect(res.body.data.permissions).toEqual(expect.arrayContaining(['users.read', 'roles.create']));
       expect(res.body.data.permissions).toHaveLength(17);
@@ -91,7 +95,7 @@ describe('Auth API', () => {
       await agent.post('/api/v1/auth/register').send(credentials);
       const login = await agent
         .post('/api/v1/auth/login')
-        .send({ email: credentials.email, password: credentials.password });
+        .send({ email: credentials.email, password: credentials.password, tenantSlug: credentials.tenantSlug });
 
       const oldCookie = login.headers['set-cookie'];
 
@@ -106,7 +110,7 @@ describe('Auth API', () => {
     it('revokes the refresh token on logout so it can no longer be used', async () => {
       const agent = request.agent(app);
       await agent.post('/api/v1/auth/register').send(credentials);
-      await agent.post('/api/v1/auth/login').send({ email: credentials.email, password: credentials.password });
+      await agent.post('/api/v1/auth/login').send({ email: credentials.email, password: credentials.password, tenantSlug: credentials.tenantSlug });
 
       const logoutRes = await agent.post('/api/v1/auth/logout');
       expect(logoutRes.status).toBe(204);

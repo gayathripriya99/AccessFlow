@@ -29,7 +29,7 @@ export function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setSubmitError(null);
     try {
-      await login(values.email, values.password);
+      await login(values.email, values.password, values.tenantSlug);
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setSubmitError(getErrorMessage(err, t));
@@ -62,6 +62,11 @@ export function LoginPage() {
             type="password"
             error={errors.password ? t('auth.validation.passwordRequired') : undefined}
             {...register('password')}
+          />
+          <FormField
+            label={t('auth.login.tenantSlug')}
+            error={errors.tenantSlug ? t('auth.validation.tenantSlugRequired') : undefined}
+            {...register('tenantSlug')}
           />
           {submitError && (
             <p className="text-sm text-red-600" role="alert">

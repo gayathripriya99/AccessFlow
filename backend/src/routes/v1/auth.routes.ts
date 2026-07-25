@@ -4,6 +4,7 @@ import { AuthService } from '../../services/AuthService';
 import { AdminBootstrapService } from '../../services/AdminBootstrapService';
 import { AuthorizationService } from '../../services/AuthorizationService';
 import { UserRepository } from '../../repositories/UserRepository';
+import { TenantRepository } from '../../repositories/TenantRepository';
 import { RefreshTokenRepository } from '../../repositories/RefreshTokenRepository';
 import { AuditLogRepository } from '../../repositories/AuditLogRepository';
 import { RoleRepository } from '../../repositories/RoleRepository';
@@ -23,6 +24,7 @@ const adminBootstrapService = new AdminBootstrapService(
 );
 const authService = new AuthService(
   userRepository,
+  new TenantRepository(),
   new RefreshTokenRepository(),
   new AuditLogRepository(),
   adminBootstrapService,

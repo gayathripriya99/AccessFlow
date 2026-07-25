@@ -21,7 +21,7 @@ const authorizationService = new AuthorizationService(new UserRepository(), new 
 export function requireAccess(resourceType: string, action: string, fallbackPermission: string) {
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
-      const decision = await abacService.evaluate({
+      const decision = await abacService.evaluate(req.auth!.tenantId, {
         subject: { id: req.auth!.userId },
         resource: { type: resourceType, id: req.params.id },
         action,
@@ -36,7 +36,7 @@ export function requireAccess(resourceType: string, action: string, fallbackPerm
         return;
       }
 
-      const permissions = await authorizationService.getPermissionNames(req.auth!.userId);
+      const permissions = await authorizationService.getPermissionNames(req.auth!.tenantId, req.auth!.userId);
       if (!permissions.has(fallbackPermission)) {
         next(ApiError.forbidden(`Missing required permission: ${fallbackPermission}`));
         return;

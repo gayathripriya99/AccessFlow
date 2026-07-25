@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { PolicyRepository } from '../repositories/PolicyRepository';
 import { PolicyCondition, PolicyDocument } from '../models/Policy';
 
@@ -19,8 +20,8 @@ export interface AbacContext {
 export class AbacService {
   constructor(private readonly policyRepository: PolicyRepository) {}
 
-  async evaluate(context: AbacContext): Promise<AbacDecision> {
-    const policies = await this.policyRepository.findApplicable(context.resource.type, context.action);
+  async evaluate(tenantId: string | Types.ObjectId, context: AbacContext): Promise<AbacDecision> {
+    const policies = await this.policyRepository.findApplicable(tenantId, context.resource.type, context.action);
     const matching = policies.filter((policy) => this.matches(policy, context));
 
     if (matching.some((policy) => policy.effect === 'deny')) {

@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import { createAuthenticatedUser, createNonAdminUser } from './helpers/authenticatedUser';
+import { createAuthenticatedUser, createNonAdminUser, joinOrg } from './helpers/authenticatedUser';
 
 const app = createApp();
 
@@ -110,8 +110,8 @@ describe('ABAC self-service access (Phase 8)', () => {
   it('lets a permission-less user view their own profile, but not another user\'s', async () => {
     const admin = await createAuthenticatedUser(app);
     const auth = `Bearer ${admin.accessToken}`;
-    const self = await createAuthenticatedUser(app);
-    const other = await createAuthenticatedUser(app);
+    const self = await joinOrg(app, admin.tenantSlug);
+    const other = await joinOrg(app, admin.tenantSlug);
 
     const ownProfile = await request(app)
       .get(`/api/v1/users/${self.userId}`)
@@ -132,7 +132,7 @@ describe('ABAC self-service access (Phase 8)', () => {
   it('lets a permission-less user rename themself, but not grant themself roles or reactivate/deactivate themself', async () => {
     const admin = await createAuthenticatedUser(app);
     const auth = `Bearer ${admin.accessToken}`;
-    const self = await createAuthenticatedUser(app);
+    const self = await joinOrg(app, admin.tenantSlug);
     const selfAuth = `Bearer ${self.accessToken}`;
 
     const renamed = await request(app)
@@ -173,8 +173,8 @@ describe('ABAC self-service access (Phase 8)', () => {
       .set('Authorization', auth)
       .send({ name: 'can-delete-users', description: 'x', permissions: [permissionId] });
 
-    const deleter = await createAuthenticatedUser(app);
-    const victim = await createAuthenticatedUser(app);
+    const deleter = await joinOrg(app, admin.tenantSlug);
+    const victim = await joinOrg(app, admin.tenantSlug);
     await request(app)
       .patch(`/api/v1/users/${deleter.userId}`)
       .set('Authorization', auth)
@@ -194,7 +194,7 @@ describe('ABAC self-service access (Phase 8)', () => {
   it('stops applying once the underlying policy is disabled or deleted', async () => {
     const admin = await createAuthenticatedUser(app);
     const auth = `Bearer ${admin.accessToken}`;
-    const self = await createAuthenticatedUser(app);
+    const self = await joinOrg(app, admin.tenantSlug);
     const selfAuth = `Bearer ${self.accessToken}`;
 
     const policies = await request(app).get('/api/v1/policies?search=self-service-read').set('Authorization', auth);

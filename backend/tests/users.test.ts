@@ -1,13 +1,8 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import { createAuthenticatedUser, createNonAdminUser } from './helpers/authenticatedUser';
+import { createAuthenticatedUser, createNonAdminUser, joinOrg } from './helpers/authenticatedUser';
 
 const app = createApp();
-
-async function authHeader() {
-  const { accessToken } = await createAuthenticatedUser(app);
-  return `Bearer ${accessToken}`;
-}
 
 describe('Users API', () => {
   it('rejects unauthenticated requests', async () => {
@@ -16,9 +11,10 @@ describe('Users API', () => {
   });
 
   it('lists users with pagination metadata', async () => {
-    const auth = await authHeader();
-    await createAuthenticatedUser(app);
-    await createAuthenticatedUser(app);
+    const admin = await createAuthenticatedUser(app);
+    const auth = `Bearer ${admin.accessToken}`;
+    await joinOrg(app, admin.tenantSlug);
+    await joinOrg(app, admin.tenantSlug);
 
     const res = await request(app).get('/api/v1/users?limit=2&page=1').set('Authorization', auth);
 
@@ -29,8 +25,9 @@ describe('Users API', () => {
   });
 
   it('filters users by search and isActive', async () => {
-    const auth = await authHeader();
-    const { userId } = await createAuthenticatedUser(app);
+    const admin = await createAuthenticatedUser(app);
+    const auth = `Bearer ${admin.accessToken}`;
+    const { userId } = await joinOrg(app, admin.tenantSlug);
 
     const res = await request(app)
       .get(`/api/v1/users?search=test-user&isActive=true`)
@@ -41,8 +38,9 @@ describe('Users API', () => {
   });
 
   it('gets a single user with populated roles', async () => {
-    const auth = await authHeader();
-    const { userId } = await createAuthenticatedUser(app);
+    const admin = await createAuthenticatedUser(app);
+    const auth = `Bearer ${admin.accessToken}`;
+    const { userId } = await joinOrg(app, admin.tenantSlug);
 
     const res = await request(app).get(`/api/v1/users/${userId}`).set('Authorization', auth);
 
@@ -51,8 +49,9 @@ describe('Users API', () => {
   });
 
   it('updates a user (name, isActive, roles) and rejects an unknown role id', async () => {
-    const auth = await authHeader();
-    const { userId } = await createAuthenticatedUser(app);
+    const admin = await createAuthenticatedUser(app);
+    const auth = `Bearer ${admin.accessToken}`;
+    const { userId } = await joinOrg(app, admin.tenantSlug);
 
     const badRole = await request(app)
       .patch(`/api/v1/users/${userId}`)
@@ -77,11 +76,16 @@ describe('Users API', () => {
   });
 
   it('deletes a user and revokes their sessions', async () => {
-    const auth = await authHeader();
+    const admin = await createAuthenticatedUser(app);
+    const auth = `Bearer ${admin.accessToken}`;
     const email = 'delete-me@example.com';
     const password = 'Str0ngPassw0rd!';
-    await request(app).post('/api/v1/auth/register').send({ email, password, name: 'Delete Me' });
-    const login = await request(app).post('/api/v1/auth/login').send({ email, password });
+    await request(app)
+      .post('/api/v1/auth/register')
+      .send({ mode: 'join', email, password, name: 'Delete Me', tenantSlug: admin.tenantSlug });
+    const login = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email, password, tenantSlug: admin.tenantSlug });
     const userId = (
       await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${login.body.data.accessToken}`)
     ).body.data.id;

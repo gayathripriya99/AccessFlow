@@ -18,23 +18,27 @@ export interface ListPermissionsFilter {
 }
 
 export class PermissionRepository {
-  findByName(name: string): Promise<PermissionDocument | null> {
-    return Permission.findOne({ name: name.toLowerCase() }).exec();
+  findByName(tenantId: string | Types.ObjectId, name: string): Promise<PermissionDocument | null> {
+    return Permission.findOne({ tenantId, name: name.toLowerCase() }).exec();
   }
 
-  findById(id: string | Types.ObjectId): Promise<PermissionDocument | null> {
-    return Permission.findById(id).exec();
+  findById(tenantId: string | Types.ObjectId, id: string | Types.ObjectId): Promise<PermissionDocument | null> {
+    return Permission.findOne({ _id: id, tenantId }).exec();
   }
 
-  create(input: CreatePermissionInput): Promise<PermissionDocument> {
-    return Permission.create(input);
+  create(tenantId: string | Types.ObjectId, input: CreatePermissionInput): Promise<PermissionDocument> {
+    return Permission.create({ ...input, tenantId });
   }
 
   async list(
+    tenantId: string | Types.ObjectId,
     filter: ListPermissionsFilter,
     pagination: PaginationParams,
   ): Promise<{ items: PermissionDocument[]; total: number }> {
-    const query = filter.search ? { name: { $regex: filter.search, $options: 'i' } } : {};
+    const query: Record<string, unknown> = { tenantId };
+    if (filter.search) {
+      query.name = { $regex: filter.search, $options: 'i' };
+    }
     const [items, total] = await Promise.all([
       Permission.find(query).sort({ name: 1 }).skip(pagination.skip).limit(pagination.limit).exec(),
       Permission.countDocuments(query).exec(),
@@ -42,14 +46,21 @@ export class PermissionRepository {
     return { items, total };
   }
 
-  updateById(id: string | Types.ObjectId, input: UpdatePermissionInput): Promise<PermissionDocument | null> {
-    return Permission.findByIdAndUpdate(id, input, { new: true, runValidators: true }).exec();
+  updateById(
+    tenantId: string | Types.ObjectId,
+    id: string | Types.ObjectId,
+    input: UpdatePermissionInput,
+  ): Promise<PermissionDocument | null> {
+    return Permission.findOneAndUpdate({ _id: id, tenantId }, input, { new: true, runValidators: true }).exec();
   }
 
-  async deleteById(id: string | Types.ObjectId): Promise<PermissionDocument | null> {
-    const deleted = await Permission.findByIdAndDelete(id).exec();
+  async deleteById(
+    tenantId: string | Types.ObjectId,
+    id: string | Types.ObjectId,
+  ): Promise<PermissionDocument | null> {
+    const deleted = await Permission.findOneAndDelete({ _id: id, tenantId }).exec();
     if (deleted) {
-      await Role.updateMany({ permissions: deleted._id }, { $pull: { permissions: deleted._id } }).exec();
+      await Role.updateMany({ tenantId, permissions: deleted._id }, { $pull: { permissions: deleted._id } }).exec();
     }
     return deleted;
   }

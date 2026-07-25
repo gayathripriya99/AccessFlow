@@ -14,7 +14,7 @@ const authorizationService = new AuthorizationService(new UserRepository(), new 
 export function requirePermission(permissionName: string) {
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
-      const permissions = await authorizationService.getPermissionNames(req.auth!.userId);
+      const permissions = await authorizationService.getPermissionNames(req.auth!.tenantId, req.auth!.userId);
       if (!permissions.has(permissionName)) {
         next(ApiError.forbidden(`Missing required permission: ${permissionName}`));
         return;

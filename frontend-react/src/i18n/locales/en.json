@@ -48,7 +48,8 @@
       "noAccount": "Don't have an account?",
       "registerLink": "Register",
       "invalidCredentials": "Invalid email or password.",
-      "sessionExpired": "Your session has expired. Please log in again."
+      "sessionExpired": "Your session has expired. Please log in again.",
+      "tenantSlug": "Organization slug"
     },
     "register": {
       "title": "Create your AccessFlow account",
@@ -56,13 +57,21 @@
       "submit": "Register",
       "haveAccount": "Already have an account?",
       "loginLink": "Log in",
-      "success": "Account created — please log in."
+      "success": "Account created — please log in.",
+      "modeLabel": "Registration type",
+      "modeCreate": "Create a new organization",
+      "modeJoin": "Join an existing organization",
+      "tenantName": "Organization name",
+      "tenantSlug": "Organization slug"
     },
     "validation": {
       "emailRequired": "Enter a valid email address.",
       "passwordRequired": "Password is required.",
       "passwordWeak": "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a number.",
-      "nameRequired": "Enter your name."
+      "nameRequired": "Enter your name.",
+      "tenantNameRequired": "Enter your organization's name.",
+      "tenantSlugRequired": "Enter your organization's slug.",
+      "tenantSlugInvalid": "Use lowercase letters, numbers, and hyphens only (e.g. \"acme-corp\")."
     }
   },
   "dashboard": {
