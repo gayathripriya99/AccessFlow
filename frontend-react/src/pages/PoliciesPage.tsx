@@ -244,7 +244,7 @@ export function PoliciesPage() {
                 id="policy-resource"
                 value={form.resource}
                 onChange={(e) => setForm({ ...form, resource: e.target.value as PolicyResource })}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
               >
                 <option value="user">user</option>
               </select>
@@ -254,7 +254,7 @@ export function PoliciesPage() {
                 id="policy-action"
                 value={form.action}
                 onChange={(e) => setForm({ ...form, action: e.target.value as PolicyAction })}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
               >
                 <option value="read">read</option>
                 <option value="update">update</option>
@@ -266,7 +266,7 @@ export function PoliciesPage() {
                 id="policy-effect"
                 value={form.effect}
                 onChange={(e) => setForm({ ...form, effect: e.target.value as PolicyEffect })}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
               >
                 <option value="allow">{t('policies.allow')}</option>
                 <option value="deny">{t('policies.deny')}</option>

@@ -85,7 +85,7 @@ export function AuditLogsPage() {
             id="audit-action-filter"
             value={action}
             onChange={(e) => setActionFiltered(e.target.value as AuditAction | '')}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
           >
             <option value="">{t('auditLogs.filters.allActions')}</option>
             {AUDIT_ACTIONS.map((value) => (

@@ -5,10 +5,11 @@ interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
   children?: ReactNode;
+  ref?: React.Ref<HTMLInputElement>;
 }
 
 /** Label + input, wired for accessibility (label htmlFor, aria-invalid, aria-describedby error text). Pass `children` instead of relying on the built-in `<input>` to render a custom control (e.g. a `<select>` or checkbox group) while keeping the same label/error wiring. */
-export function FormField({ label, error, id, children, className = '', ...rest }: FormFieldProps) {
+export function FormField({ label, error, id, children, className = '', ref, ...rest }: FormFieldProps) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
   const errorId = `${fieldId}-error`;
@@ -20,10 +21,11 @@ export function FormField({ label, error, id, children, className = '', ...rest 
       </label>
       {children ?? (
         <input
+          ref={ref}
           id={fieldId}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
-          className={`rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 ${className}`}
+          className={`rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 placeholder:text-gray-400 ${className}`}
           {...rest}
         />
       )}

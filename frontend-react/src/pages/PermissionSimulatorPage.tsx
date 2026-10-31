@@ -106,7 +106,7 @@ export function PermissionSimulatorPage() {
               id="simulator-user"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
             >
               <option value="">{t('simulator.selectUserPlaceholder')}</option>
               {users?.data.map((user) => (
@@ -139,7 +139,7 @@ export function PermissionSimulatorPage() {
             id="simulator-permission"
             value={permission}
             onChange={(e) => setPermission(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
           >
             <option value="">{t('simulator.selectPermissionPlaceholder')}</option>
             {permissions?.data.map((p) => (

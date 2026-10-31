@@ -99,4 +99,7 @@ const policySchema = new Schema<PolicyDocument>(
   { timestamps: true, toJSON: toJSONOptions },
 );
 
+// Phase 9: policy names are unique per-tenant, not global.
+policySchema.index({ tenantId: 1, name: 1 }, { unique: true });
+
 export const Policy = model<PolicyDocument>('Policy', policySchema);
