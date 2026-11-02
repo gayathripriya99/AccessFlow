@@ -1,0 +1,10 @@
+{
+  "name": "accessflow",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "cd frontend-react && npm run dev",
+    "build": "cd frontend-react && npm install && npm run build",
+    "preview": "cd frontend-react && npm run preview"
+  }
+}
