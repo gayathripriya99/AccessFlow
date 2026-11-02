@@ -1,7 +1,9 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { getAccessToken, notifyAuthFailure, setAccessToken } from '../auth/tokenStore';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD
+  ? 'https://accessflow-g1mk.onrender.com/api/v1'
+  : 'http://localhost:4000/api/v1');
 
 export const apiClient = axios.create({
   baseURL,
